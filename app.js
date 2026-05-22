@@ -1023,7 +1023,8 @@ function updateSpamWarning() {
 campaignLimitInput.addEventListener("change", updateSpamWarning);
 updateSpamWarning(); // Ejecutar en la carga inicial por si el navegador conserva el valor seleccionado
 
-// Por defecto, cargar cuerpo del mensaje modelo
+// Por defecto, cargar asunto y cuerpo del mensaje modelo
+emailSubjectInput.value = "Postulación espontánea - {nombre_empresa}";
 emailBodyInput.value = `Estimado equipo de selección de {nombre_empresa},
 
 Me dirijo a ustedes con el propósito de presentarles mi postulación para formar parte de su organización. Adjunto a este correo encontrarán mi currículum vitae detallando mi trayectoria y experiencia formativa.
