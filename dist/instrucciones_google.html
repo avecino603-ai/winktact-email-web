@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instrucciones de Configuración — Google Client ID</title>
+  <link rel="stylesheet" href="index.css">
+  <style>
+    body {
+      justify-content: flex-start;
+      padding: 3rem 1rem;
+    }
+    .guide-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .step-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .step-number {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--accent-color);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    ol, ul {
+      padding-left: 1.5rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    li {
+      margin-bottom: 0.5rem;
+    }
+    li strong {
+      color: var(--text-primary);
+    }
+    code {
+      background: rgba(0, 0, 0, 0.4);
+      padding: 0.2rem 0.4rem;
+      border-radius: 6px;
+      font-family: monospace;
+      color: #38bdf8;
+      font-size: 0.9rem;
+    }
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 0.75rem 1.5rem;
+      border-radius: 12px;
+      font-weight: 600;
+      margin-bottom: 2rem;
+      transition: var(--transition);
+    }
+    .btn-back:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateX(-4px);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container guide-container">
+    <a href="index.html" class="btn-back">⬅ Volver a la aplicación</a>
+    
+    <header style="text-align: left; margin-bottom: 2.5rem;">
+      <h1>Configuración del Inicio de Sesión Real con Google</h1>
+      <p>Guía paso a paso para obtener tu Client ID de Google Cloud y habilitar la autenticación real.</p>
+    </header>
+
+    <div class="step-card">
+      <div class="step-number"><span>1️⃣</span> Paso 1: Crear un proyecto en Google Cloud</div>
+      <ol>
+        <li>Ingresa a la consola oficial de desarrolladores: <a href="https://console.cloud.google.com/" target="_blank" style="color: var(--accent-color); font-weight: 600; text-decoration: underline;">Google Cloud Console</a>.</li>
+        <li>Inicia sesión con tu cuenta de Gmail.</li>
+        <li>Haz clic en el selector de proyectos en la parte superior izquierda (al lado del logo de Google Cloud) y selecciona <strong>"Proyecto Nuevo"</strong> (New Project).</li>
+        <li>Dale un nombre a tu proyecto (ej: <code>Winktact-Email</code>) y presiona <strong>"Crear"</strong>.</li>
+      </ol>
+    </div>
+
+    <div class="step-card">
+      <div class="step-number"><span>2️⃣</span> Paso 2: Configurar la Pantalla de Consentimiento OAuth</div>
+      <ol>
+        <li>En el menú lateral izquierdo, ve a <strong>APIs y servicios</strong> > <strong>Pantalla de consentimiento de OAuth</strong> (OAuth consent screen).</li>
+        <li>Elige el tipo de usuario <strong>Externo</strong> (External) y haz clic en <strong>"Crear"</strong>.</li>
+        <li>Completa los datos requeridos:
+          <ul>
+            <li><strong>Nombre de la aplicación:</strong> <code>Winktact Email</code></li>
+            <li><strong>Correo de asistencia:</strong> Tu dirección de Gmail.</li>
+            <li><strong>Contacto del desarrollador:</strong> Tu dirección de Gmail.</li>
+          </ul>
+        </li>
+        <li>Haz clic en <strong>"Guardar y continuar"</strong> en las pantallas siguientes hasta finalizar (no es necesario configurar alcances especiales ni usuarios de prueba para uso local propio).</li>
+      </ol>
+    </div>
+
+    <div class="step-card">
+      <div class="step-number"><span>3️⃣</span> Paso 3: Crear las Credenciales (Client ID)</div>
+      <ol>
+        <li>En el menú de la izquierda, ve a <strong>APIs y servicios</strong> > <strong>Credenciales</strong> (Credentials).</li>
+        <li>Haz clic en <strong>"+ Crear credenciales"</strong> y selecciona <strong>"ID de cliente de OAuth"</strong> (OAuth client ID).</li>
+        <li>En <strong>Tipo de aplicación</strong>, elige <strong>Aplicación web</strong> (Web application).</li>
+        <li>En la sección de <strong>Orígenes autorizados de JavaScript</strong>:
+          <ul>
+            <li>Haz clic en <strong>"+ Agregar URI"</strong>.</li>
+            <li>Escribe exactamente: <code>http://localhost:8005</code></li>
+          </ul>
+        </li>
+        <li>En la sección de <strong>URI de redireccionamiento autorizados</strong>:
+          <ul>
+            <li>Haz clic en <strong>"+ Agregar URI"</strong>.</li>
+            <li>Escribe exactamente: <code>http://localhost:8005</code></li>
+          </ul>
+        </li>
+        <li>Haz clic en <strong>"Crear"</strong>.</li>
+        <li>Copia la cadena larga que aparece como <strong>ID de cliente</strong> (ej: <code>123456-abc.apps.googleusercontent.com</code>).</li>
+      </ol>
+    </div>
+
+    <div class="step-card">
+      <div class="step-number"><span>4️⃣</span> Paso 4: Cargar el Client ID en la Web</div>
+      <ol>
+        <li>Regresa a la app en <a href="index.html" style="color: var(--accent-color); font-weight: 600; text-decoration: underline;">index.html</a>.</li>
+        <li>En la pantalla de acceso, haz clic en **⚙️ Configuración del Modo de Acceso**.</li>
+        <li>Pega el ID de cliente que copiaste en el campo de texto.</li>
+        <li>Presiona **"Activar Login Real"**.</li>
+        <li>¡Listo! El botón de Google oficial se cargará automáticamente y podrás iniciar sesión de forma segura. La clave quedará guardada de forma local en tu navegador para futuros accesos.</li>
+      </ol>
+    </div>
+
+    <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.15); border-radius: 12px; padding: 1rem; color: var(--success-color); font-size: 0.9rem; line-height: 1.5; display: flex; align-items: center; gap: 0.75rem;">
+      <span style="font-size: 1.5rem;">🛡️</span>
+      <span><strong>Nota de seguridad:</strong> El Client ID de Google sirve únicamente para identificar tu aplicación web ante los servidores de Google. No expone ninguna contraseña ni dato privado de tu cuenta.</span>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -50,6 +50,15 @@ const fileNameDisplay = document.getElementById("fileNameDisplay");
 let selectedFile = null;
 let isSending = false;
 let campaignInterval = null;
+let excelBusinesses = [];
+
+// Elementos de importación de Excel / Origen de datos
+const sourceSimulated = document.getElementById("sourceSimulated");
+const sourceExcel = document.getElementById("sourceExcel");
+const excelUploadContainer = document.getElementById("excelUploadContainer");
+const simulatedContainer = document.getElementById("simulatedContainer");
+const excelFileInput = document.getElementById("excelFile");
+const excelSummaryText = document.getElementById("excelSummaryText");
 
 // Inicialización de variables
 const userNameInput = document.getElementById("userName");
@@ -268,6 +277,102 @@ btnResetClientId.addEventListener("click", () => {
   appendLog("[SISTEMA] Restablecido al modo de inicio de sesión simulado.", "info");
 });
 
+// Lógica de alternancia del Origen de Datos (Simulado vs Excel)
+if (sourceSimulated && sourceExcel) {
+  const toggleSource = () => {
+    if (sourceSimulated.checked) {
+      if (simulatedContainer) simulatedContainer.style.display = "block";
+      if (excelUploadContainer) excelUploadContainer.style.display = "none";
+    } else {
+      if (simulatedContainer) simulatedContainer.style.display = "none";
+      if (excelUploadContainer) excelUploadContainer.style.display = "block";
+    }
+  };
+  sourceSimulated.addEventListener("change", toggleSource);
+  sourceExcel.addEventListener("change", toggleSource);
+}
+
+// Lógica de importación de Excel con SheetJS
+if (excelFileInput) {
+  excelFileInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+        if (!jsonData || jsonData.length === 0) {
+          throw new Error("El archivo de Excel está vacío o no es válido.");
+        }
+
+        excelBusinesses = [];
+        jsonData.forEach((row, index) => {
+          let email = "";
+          let name = "";
+
+          // Buscar columnas que coincidan con Email y Nombre
+          for (const key in row) {
+            const cleanKey = key.toLowerCase().trim();
+            if (cleanKey.includes("email") || cleanKey === "mail" || cleanKey.includes("correo")) {
+              email = String(row[key]).trim();
+            }
+            if (cleanKey.includes("nombre") || cleanKey.includes("negocio") || cleanKey.includes("business") || cleanKey.includes("empresa")) {
+              name = String(row[key]).trim();
+            }
+          }
+
+          if (email && email.includes("@")) {
+            excelBusinesses.push({
+              name: name || `Empresa #${index + 1}`,
+              email: email,
+              rubro: "Excel"
+            });
+          }
+        });
+
+        if (excelBusinesses.length === 0) {
+          throw new Error("No se encontraron correos electrónicos válidos. Asegúrate de tener una columna llamada 'Email'.");
+        }
+
+        excelSummaryText.innerText = `✓ Se cargaron ${excelBusinesses.length} contactos reales con éxito.`;
+        excelSummaryText.style.display = "block";
+        excelSummaryText.style.background = "rgba(16, 185, 129, 0.1)";
+        excelSummaryText.style.color = "var(--success-color)";
+        excelSummaryText.style.borderColor = "rgba(16, 185, 129, 0.2)";
+        appendLog(`[SISTEMA] Importación de Excel exitosa: ${excelBusinesses.length} contactos reales cargados.`, "success");
+
+      } catch (err) {
+        excelSummaryText.innerText = `✗ Error: ${err.message}`;
+        excelSummaryText.style.display = "block";
+        excelSummaryText.style.background = "rgba(239, 68, 68, 0.1)";
+        excelSummaryText.style.color = "var(--danger-color)";
+        excelSummaryText.style.borderColor = "rgba(239, 68, 68, 0.2)";
+        excelBusinesses = [];
+        excelFileInput.value = "";
+        appendLog(`[ERROR] Error leyendo archivo de Excel: ${err.message}`, "danger");
+      }
+    };
+
+    reader.onerror = () => {
+      excelSummaryText.innerText = "✗ Error al leer el archivo.";
+      excelSummaryText.style.display = "block";
+      excelSummaryText.style.background = "rgba(239, 68, 68, 0.1)";
+      excelSummaryText.style.color = "var(--danger-color)";
+      excelSummaryText.style.borderColor = "rgba(239, 68, 68, 0.2)";
+      excelBusinesses = [];
+      excelFileInput.value = "";
+    };
+
+    reader.readAsArrayBuffer(file);
+  });
+}
+
 // Botón para Cerrar Sesión
 btnLogout.addEventListener("click", () => {
   sessionStorage.removeItem("winktact_username");
@@ -282,6 +387,18 @@ btnLogout.addEventListener("click", () => {
   uploadText.innerHTML = `Arrastra tu archivo aquí o <span>haz clic para buscar</span><br><small style="font-size: 0.8rem; color: var(--text-secondary);">Solo archivos PDF de hasta 5MB</small>`;
   fileNameDisplay.style.display = "none";
   fileNameDisplay.innerText = "";
+
+  // Limpiar estado e inputs de Excel
+  excelBusinesses = [];
+  if (excelFileInput) excelFileInput.value = "";
+  if (excelSummaryText) {
+    excelSummaryText.style.display = "none";
+    excelSummaryText.innerText = "";
+  }
+  if (sourceSimulated) sourceSimulated.checked = true;
+  if (simulatedContainer) simulatedContainer.style.display = "block";
+  if (excelUploadContainer) excelUploadContainer.style.display = "none";
+
   
   // Resetear wizard a Paso 1 y deshabilitar botones
   currentStep = 1;
@@ -554,14 +671,22 @@ function validateStep(step) {
       return false;
     }
   } else if (step === 2) {
-    const selectedRubros = getSelectedRubros();
-    if (selectedRubros.length === 0) {
-      alert("Por favor, selecciona al menos un rubro o escribe rubros personalizados.");
-      return false;
-    }
-    if (!document.getElementById("businessCity").value.trim()) {
-      alert("Por favor, ingresa una ciudad de búsqueda.");
-      return false;
+    const isExcel = sourceExcel && sourceExcel.checked;
+    if (isExcel) {
+      if (excelBusinesses.length === 0) {
+        alert("Por favor, selecciona y carga un archivo Excel de Winktact válido con correos reales antes de continuar.");
+        return false;
+      }
+    } else {
+      const selectedRubros = getSelectedRubros();
+      if (selectedRubros.length === 0) {
+        alert("Por favor, selecciona al menos un rubro o escribe rubros personalizados.");
+        return false;
+      }
+      if (!document.getElementById("businessCity").value.trim()) {
+        alert("Por favor, ingresa una ciudad de búsqueda.");
+        return false;
+      }
     }
     if (!emailSubjectInput.value.trim()) {
       alert("Por favor, ingresa un asunto para los correos.");
@@ -675,87 +800,99 @@ async function startCampaign() {
   if (isSending) return;
   isSending = true;
 
+  const isExcel = sourceExcel && sourceExcel.checked;
   const rubros = getSelectedRubros();
   const city = document.getElementById("businessCity").value.trim() || "Pergamino";
   
-  // Agrupar empresas de todos los rubros seleccionados
-  let rawBusinesses = [];
-  
-  rubros.forEach(rubro => {
-    const list = LOCAL_BUSINESS_DB[rubro];
-    if (list) {
-      // Rubros predefinidos
-      list.forEach(b => {
-        rawBusinesses.push({
-          name: b.name.replace(/Pergamino/g, city),
-          email: b.email.replace(/pergamino/g, city.toLowerCase().replace(/\s+/g, '')),
-          rubro: rubro
-        });
-      });
-    } else {
-      // Rubros personalizados (escritos por coma)
-      const cleanRubroLower = rubro.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
-      const cleanCityLower = city.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
-      
-      // Generar 3 empresas realistas ficticias en base al rubro personalizado
-      rawBusinesses.push(
-        { 
-          name: `${rubro} Central ${city}`, 
-          email: `contacto@${cleanRubroLower}${cleanCityLower}.com.ar`, 
-          rubro: rubro 
-        },
-        { 
-          name: `Servicios y Soluciones ${rubro} ${city}`, 
-          email: `administracion@${cleanRubroLower}servicios.com`, 
-          rubro: rubro 
-        },
-        { 
-          name: `${rubro} Integral ${city}`, 
-          email: `consultas@${cleanRubroLower}integral.com.ar`, 
-          rubro: rubro 
-        }
-      );
-    }
-  });
+  let businesses = [];
 
-  // Fallback absoluto si no hay ninguna empresa
-  if (rawBusinesses.length === 0) {
-    rawBusinesses = [
-      { name: `Pyme Comercial ${city} 1`, email: `contacto@pyme1.com.ar`, rubro: "General" },
-      { name: `Pyme Comercial ${city} 2`, email: `administracion@pyme2.com`, rubro: "General" }
-    ];
-  }
-
-  // Leer el límite de envíos configurado por el usuario
-  const limitValue = campaignLimitInput.value;
-  let targetLimit = 50;
-  if (limitValue === "all") {
-    // Si selecciona acceso ilimitado de todas las empresas encontradas
-    targetLimit = rawBusinesses.length;
-    // Si hay muy pocas, generamos hasta 45 para simular un volumen adecuado de bases de datos
-    if (targetLimit < 40) {
-      targetLimit = 40;
-    }
+  if (isExcel) {
+    // Clonamos la lista cargada de Excel
+    businesses = excelBusinesses.map(b => ({
+      name: b.name,
+      email: b.email,
+      rubro: b.rubro || "Excel"
+    }));
+    
+    appendLog(`[SISTEMA] Iniciando campaña con base de datos real importada desde Excel (${businesses.length} contactos)...`, "info");
   } else {
-    targetLimit = parseInt(limitValue, 10);
-  }
-
-  // Completar la cola hasta el límite deseado
-  const businesses = [];
-  for (let i = 0; i < targetLimit; i++) {
-    const base = rawBusinesses[i % rawBusinesses.length];
-    businesses.push({
-      name: `${base.name} #${i + 1}`,
-      email: base.email,
-      rubro: base.rubro
+    // Agrupar empresas de todos los rubros seleccionados
+    let rawBusinesses = [];
+    
+    rubros.forEach(rubro => {
+      const list = LOCAL_BUSINESS_DB[rubro];
+      if (list) {
+        // Rubros predefinidos
+        list.forEach(b => {
+          rawBusinesses.push({
+            name: b.name.replace(/Pergamino/g, city),
+            email: b.email.replace(/pergamino/g, city.toLowerCase().replace(/\s+/g, '')),
+            rubro: rubro
+          });
+        });
+      } else {
+        // Rubros personalizados (escritos por coma)
+        const cleanRubroLower = rubro.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
+        const cleanCityLower = city.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
+        
+        // Generar 3 empresas realistas ficticias en base al rubro personalizado
+        rawBusinesses.push(
+          { 
+            name: `${rubro} Central ${city}`, 
+            email: `contacto@${cleanRubroLower}${cleanCityLower}.com.ar`, 
+            rubro: rubro 
+          },
+          { 
+            name: `Servicios y Soluciones ${rubro} ${city}`, 
+            email: `administracion@${cleanRubroLower}servicios.com`, 
+            rubro: rubro 
+          },
+          { 
+            name: `${rubro} Integral ${city}`, 
+            email: `consultas@${cleanRubroLower}integral.com.ar`, 
+            rubro: rubro 
+          }
+        );
+      }
     });
+
+    // Fallback absoluto si no hay ninguna empresa
+    if (rawBusinesses.length === 0) {
+      rawBusinesses = [
+        { name: `Pyme Comercial ${city} 1`, email: `contacto@pyme1.com.ar`, rubro: "General" },
+        { name: `Pyme Comercial ${city} 2`, email: `administracion@pyme2.com`, rubro: "General" }
+      ];
+    }
+
+    // Leer el límite de envíos configurado por el usuario
+    const limitValue = campaignLimitInput.value;
+    let targetLimit = 50;
+    if (limitValue === "all") {
+      targetLimit = rawBusinesses.length;
+      if (targetLimit < 40) {
+        targetLimit = 40;
+      }
+    } else {
+      targetLimit = parseInt(limitValue, 10);
+    }
+
+    // Completar la cola hasta el límite deseado
+    for (let i = 0; i < targetLimit; i++) {
+      const base = rawBusinesses[i % rawBusinesses.length];
+      businesses.push({
+        name: `${base.name} #${i + 1}`,
+        email: base.email,
+        rubro: base.rubro
+      });
+    }
+
+    appendLog(`[SISTEMA] Iniciando campaña de envíos en ${city} para los rubros: ${rubros.join(", ")}...`, "info");
   }
 
   statProspects.innerText = businesses.length;
   statSent.innerText = 0;
   statRemaining.innerText = businesses.length;
 
-  appendLog(`[SISTEMA] Iniciando campaña de envíos en ${city} para los rubros: ${rubros.join(", ")}...`, "info");
   appendLog(`[PAGO REAL] Transacción confirmada para el link de Mercado Pago (https://mpago.la/13pCrpN).`, "success");
   appendLog(`[CARGA] Procesando currículum PDF para transferencia...`, "info");
 
