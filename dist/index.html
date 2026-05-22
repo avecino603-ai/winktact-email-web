@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Winktact Email — Envío Inteligente de CV</title>
+  <link rel="stylesheet" href="index.css">
+  <script src="https://accounts.google.com/gsi/client" async defer onload="googleSdkLoaded()"></script>
+</head>
+<body>
+
+  <!-- Pantalla de Login / Autenticación -->
+  <div class="container" id="loginContainer" style="max-width: 480px; margin-bottom: 2rem;">
+    <header style="margin-bottom: 2rem;">
+      <div style="font-size: 3rem; margin-bottom: 0.5rem;">🔒</div>
+      <h1>Acceso Seguro</h1>
+      <p>Inicia sesión para verificar tu identidad y correo emisor</p>
+    </header>
+    
+    <!-- Botón de Google Auténtico (Cargará si hay Client ID) -->
+    <div id="gSignInContainer" style="display: none; margin-bottom: 1.5rem; justify-content: center; flex-direction: column; align-items: center; gap: 0.5rem;">
+      <div id="gBtn"></div>
+      <span style="font-size: 0.75rem; color: var(--success-color);">✓ Conexión real con Google activa</span>
+    </div>
+
+    <!-- Botón de Google Simulado (Modo Demostración) -->
+    <button class="btn btn-primary" id="btnGoogleLoginSimulated" style="background: white; color: #1f2937; border: 1px solid #d1d5db; display: flex; align-items: center; justify-content: center; gap: 0.75rem; width: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 1.5rem; transition: background 0.2s;">
+      <svg width="18" height="18" viewBox="0 0 18 18">
+        <path d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.47h4.84c-.21 1.12-.84 2.07-1.79 2.7v2.25h2.91c1.7-1.56 2.68-3.86 2.68-6.53z" fill="#4285F4"/>
+        <path d="M9 18c2.43 0 4.47-.8 5.96-2.22l-2.91-2.25c-.8.54-1.84.87-3.05.87-2.34 0-4.33-1.58-5.03-3.71H.95v2.3C2.43 15.89 5.5 18 9 18z" fill="#34A853"/>
+        <path d="M3.97 10.69c-.18-.54-.28-1.12-.28-1.69s.1-1.15.28-1.69V5.01H.95C.35 6.21 0 7.57 0 9s.35 2.79.95 3.99l3.02-2.3z" fill="#FBBC05"/>
+        <path d="M9 3.58c1.32 0 2.5.45 3.44 1.35L15 2.4C13.46.96 11.43 0 9 0 5.5 0 2.43 2.11.95 5.01L3.97 7.3c.7-2.13 2.69-3.72 5.03-3.72z" fill="#EA4335"/>
+      </svg>
+      <strong>Iniciar sesión con Google (Simulado)</strong>
+    </button>
+    
+    <div style="font-size: 0.8rem; color: var(--text-secondary); text-align: center; line-height: 1.4; margin-bottom: 1.5rem;">
+      Verificamos tu correo mediante Google OAuth 2.0 para asegurar que sea tu dirección real y evitar abusos.
+    </div>
+
+    <!-- Configuración del Modo de Acceso (Real vs Simulado) -->
+    <details id="googleConfigDetails" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 1rem; text-align: left;">
+      <summary style="font-size: 0.85rem; color: var(--accent-color); cursor: pointer; user-select: none; font-weight: 600;">⚙️ Configuración del Modo de Acceso</summary>
+      <div style="margin-top: 0.8rem; display: flex; flex-direction: column; gap: 0.8rem;">
+        <p style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.4; margin: 0;">
+          Para realizar un inicio de sesión real en <code>http://localhost:8000</code>, obtén un Client ID de Google Cloud y configúralo aquí.
+        </p>
+        <a href="INSTRUCCIONES_GOOGLE.md" target="_blank" style="font-size: 0.75rem; color: var(--success-color); text-decoration: underline; font-weight: 500;">📖 Ver guía para obtener Client ID</a>
+        
+        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <label for="googleClientId" style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0;">Google OAuth Client ID</label>
+          <input type="text" id="googleClientId" placeholder="Ej: 123456-abc.apps.googleusercontent.com" style="width: 100%; padding: 0.5rem; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; font-size: 0.75rem;">
+        </div>
+        
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="btn btn-primary" id="btnApplyClientId" style="padding: 0.5rem 1rem; font-size: 0.75rem; margin: 0; flex-grow: 1;">Activar Login Real</button>
+          <button class="btn btn-secondary" id="btnResetClientId" style="padding: 0.5rem 1rem; font-size: 0.75rem; margin: 0; display: none;">Restablecer a Simulado</button>
+        </div>
+        <div id="clientIdStatus" style="font-size: 0.75rem; font-weight: 500; text-align: center;"></div>
+      </div>
+    </details>
+  </div>
+  </div>
+
+  <!-- Modal Google Account Selector Simulado -->
+  <div class="google-modal-backdrop" id="googleModal">
+    <div class="google-modal-content">
+      <div class="google-modal-header">
+        <svg width="24" height="24" viewBox="0 0 24 24" style="margin-bottom: 0.5rem;">
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.85z" fill="#FBBC05"/>
+          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.85c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+        </svg>
+        <h2 style="font-family: 'Roboto', sans-serif; font-size: 1.5rem; color: #202124; margin: 0; font-weight: 400;">Elige una cuenta</h2>
+        <p style="font-family: 'Roboto', sans-serif; font-size: 0.9rem; color: #5f6368; margin: 0.25rem 0 1.5rem 0;">para ir a <strong>Winktact Email</strong></p>
+      </div>
+
+      <!-- Selector de cuentas -->
+      <div id="googleAccountsList" style="display: flex; flex-direction: column; width: 100%;">
+        <!-- Cuenta 1 -->
+        <div class="google-account-item" data-email="juan.perez@gmail.com" data-name="Juan Pérez">
+          <div class="google-avatar">J</div>
+          <div class="google-account-details">
+            <span class="google-account-name">Juan Pérez</span>
+            <span class="google-account-email">juan.perez@gmail.com</span>
+          </div>
+        </div>
+        <!-- Cuenta 2 -->
+        <div class="google-account-item" data-email="sofi.estudio@gmail.com" data-name="Sofía Fernández">
+          <div class="google-avatar" style="background-color: #e91e63;">S</div>
+          <div class="google-account-details">
+            <span class="google-account-name">Sofía Fernández</span>
+            <span class="google-account-email">sofi.estudio@gmail.com</span>
+          </div>
+        </div>
+        <!-- Cuenta 3 -->
+        <div class="google-account-item" id="btnGoogleCustomAccount">
+          <div class="google-avatar" style="background-color: #f1f3f4; color: #5f6368; font-size: 1.25rem;">👤</div>
+          <div class="google-account-details">
+            <span class="google-account-name" style="color: #1a73e8; font-weight: 500;">Usar otra cuenta</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Formulario para escribir cuenta personalizada (inicialmente oculto) -->
+      <div id="googleCustomAccountForm" style="display: none; width: 100%; text-align: left;">
+        <div style="margin-bottom: 1.5rem;">
+          <label for="customGoogleEmail" style="display:block; font-size: 0.85rem; color: #202124; margin-bottom: 0.5rem; font-family: 'Roboto', sans-serif;">Correo electrónico</label>
+          <input type="email" id="customGoogleEmail" placeholder="ejemplo@gmail.com" style="width: 100%; padding: 0.75rem; border: 1px solid #dadce0; border-radius: 4px; font-size: 1rem; color: #202124; font-family: 'Roboto', sans-serif; outline: none; box-sizing: border-box;" required>
+          <small id="googleEmailError" style="color: #d93025; font-size: 0.75rem; display: none; margin-top: 0.25rem; font-family: 'Roboto', sans-serif;">Ingresa un correo de Gmail válido (@gmail.com).</small>
+        </div>
+        <div style="margin-bottom: 1.5rem;">
+          <label for="customGoogleName" style="display:block; font-size: 0.85rem; color: #202124; margin-bottom: 0.5rem; font-family: 'Roboto', sans-serif;">Nombre completo</label>
+          <input type="text" id="customGoogleName" placeholder="Juan Pérez" style="width: 100%; padding: 0.75rem; border: 1px solid #dadce0; border-radius: 4px; font-size: 1rem; color: #202124; font-family: 'Roboto', sans-serif; outline: none; box-sizing: border-box;" required>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2rem;">
+          <button type="button" id="btnBackToAccounts" style="background: none; border: none; color: #1a73e8; font-size: 0.875rem; font-weight: 500; cursor: pointer; font-family: 'Roboto', sans-serif;">Atrás</button>
+          <button type="button" id="btnSubmitCustomAccount" style="background: #1a73e8; color: white; border: none; padding: 0.6rem 1.5rem; border-radius: 4px; font-size: 0.875rem; font-weight: 500; cursor: pointer; font-family: 'Roboto', sans-serif; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">Siguiente</button>
+        </div>
+      </div>
+      
+      <div style="margin-top: 2rem; font-size: 0.75rem; color: #757575; font-family: 'Roboto', sans-serif; line-height: 1.4; border-top: 1px solid #f1f3f4; padding-top: 1rem;">
+        Para continuar, Google compartirá tu nombre, dirección de correo electrónico, foto de perfil y preferencia de idioma con Winktact Email.
+      </div>
+      <button type="button" id="btnCloseGoogleModal" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.25rem; color: #5f6368; cursor: pointer;">&times;</button>
+    </div>
+  </div>
+
+  <!-- Contenedor Principal de la App (Oculto inicialmente) -->
+  <div class="container" id="appContainer" style="display: none;">
+    <header>
+      <h1>Winktact Email</h1>
+      <p>Envía tu CV a múltiples empresas locales de forma inteligente</p>
+    </header>
+
+    <!-- Progress Steps Tracker -->
+    <div class="steps-tracker" id="stepsTracker">
+      <div class="step-indicator active" data-step="1">1</div>
+      <div class="step-indicator" data-step="2">2</div>
+      <div class="step-indicator" data-step="3">3</div>
+      <div class="step-indicator" data-step="4">4</div>
+    </div>
+
+    <!-- Step 1: Configuración de Cuenta y CV -->
+    <div class="step-content active" id="step1">
+      <h3 style="margin-bottom: 1.5rem; color: var(--accent-color);">Paso 1: Tu cuenta y Currículum</h3>
+      
+      <div class="form-group">
+        <label for="userName">Tu Nombre Completo (Verificado por Google)</label>
+        <input type="text" id="userName" readonly style="background: rgba(255, 255, 255, 0.02); color: var(--text-secondary); cursor: not-allowed;" required>
+      </div>
+
+      <div class="form-group">
+        <label for="userEmail">Tu Correo Electrónico (Verificado por Google)</label>
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+          <input type="email" id="userEmail" readonly style="background: rgba(255, 255, 255, 0.02); color: var(--text-secondary); cursor: not-allowed; flex-grow: 1; margin-bottom: 0;" required>
+          <button type="button" class="btn btn-secondary" id="btnLogout" style="padding: 0.85rem 1.25rem; font-size: 0.9rem; margin: 0; white-space: nowrap; height: 100%;">❌ Salir</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="userPassword">Contraseña de Aplicación o SMTP</label>
+        <input type="password" id="userPassword" class="user-pass-input" placeholder="••••••••••••••••" style="width: 100%; padding: 0.85rem 1rem; background: rgba(17, 24, 39, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: var(--text-primary);" required>
+        <small style="color: var(--text-secondary); display: block; margin-top: 0.5rem; font-size: 0.8rem;">
+          Por seguridad, si usas Gmail debes generar una "Contraseña de aplicación". Tu contraseña no se guarda en ningún servidor.
+        </small>
+      </div>
+
+      <div class="form-group" style="margin-top: 2rem;">
+        <label>Sube tu CV en formato PDF</label>
+        <div class="file-upload-wrapper" id="fileUploadWrapper">
+          <input type="file" id="cvFile" accept=".pdf" required>
+          <div class="file-upload-text" id="uploadText">
+            Arrastra tu archivo aquí o <span>haz clic para buscar</span><br>
+            <small style="font-size: 0.8rem; color: var(--text-secondary);">Solo archivos PDF de hasta 5MB</small>
+          </div>
+        </div>
+        <div class="file-name-display" id="fileNameDisplay"></div>
+      </div>
+    </div>
+
+    <!-- Step 2: Segmentación y Asunto -->
+    <div class="step-content" id="step2">
+      <h3 style="margin-bottom: 1.5rem; color: var(--accent-color);">Paso 2: Rubro y Mensaje</h3>
+
+      <div class="form-group">
+        <label>Rubros Comerciales (Selecciona uno, varios o todos)</label>
+        <div style="background: rgba(17, 24, 39, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1rem; max-height: 180px; overflow-y: auto;">
+          <div style="display: flex; align-items: center; margin-bottom: 0.5rem; gap: 0.5rem;">
+            <input type="checkbox" id="rubroAll" style="width: 16px; height: 16px; cursor: pointer;">
+            <label for="rubroAll" style="margin-bottom: 0; cursor: pointer; font-weight: 700; color: var(--accent-color);">✨ Todos los Rubros</label>
+          </div>
+          <hr style="border: 0; border-top: 1px solid rgba(255, 255, 255, 0.1); margin: 0.5rem 0;">
+          <div class="rubro-checkboxes" style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <input type="checkbox" class="rubro-check" id="rubro1" value="Inmobiliaria" checked style="width: 16px; height: 16px; cursor: pointer;">
+              <label for="rubro1" style="margin-bottom: 0; cursor: pointer;">Inmobiliarias</label>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <input type="checkbox" class="rubro-check" id="rubro2" value="Ferretería" style="width: 16px; height: 16px; cursor: pointer;">
+              <label for="rubro2" style="margin-bottom: 0; cursor: pointer;">Ferreterías y Construcción</label>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <input type="checkbox" class="rubro-check" id="rubro3" value="Estudio Contable" style="width: 16px; height: 16px; cursor: pointer;">
+              <label for="rubro3" style="margin-bottom: 0; cursor: pointer;">Estudios Contables</label>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <input type="checkbox" class="rubro-check" id="rubro4" value="Gastronomía" style="width: 16px; height: 16px; cursor: pointer;">
+              <label for="rubro4" style="margin-bottom: 0; cursor: pointer;">Gastronomía (Cafés y Restó)</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="customRubros">O escribe rubros personalizados (separados por comas)</label>
+        <input type="text" id="customRubros" placeholder="Ej: Peluquería, Gimnasio, Veterinaria, Taller" style="width: 100%; padding: 0.85rem 1rem; background: rgba(17, 24, 39, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: var(--text-primary);">
+        <small style="color: var(--text-secondary); display: block; margin-top: 0.5rem; font-size: 0.8rem;">
+          Se sumarán a los rubros seleccionados arriba.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label for="businessCity">Ciudad de Búsqueda</label>
+        <input type="text" id="businessCity" value="Pergamino" placeholder="Ej: Pergamino, Rosario, Córdoba">
+      </div>
+
+      <div class="form-group">
+        <label for="campaignLimit">Cantidad de Envíos a Realizar</label>
+        <select id="campaignLimit" style="width: 100%; padding: 0.85rem 1rem; background: rgba(17, 24, 39, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: var(--text-primary);">
+          <option value="25">25 empresas (Rápido)</option>
+          <option value="50" selected>50 empresas (Recomendado)</option>
+          <option value="100">100 empresas (Completo) — ⚠️ Riesgo de Spam</option>
+          <option value="250">250 empresas (Masivo) — ⚠️ Riesgo de Spam Elevado</option>
+          <option value="all">Todas las empresas encontradas (Acceso Ilimitado) — ⚠️ Riesgo de Spam Elevado</option>
+        </select>
+        
+        <!-- Cartel de advertencia de spam dinámico -->
+        <div id="spamWarningBox" style="display: none; background: rgba(251, 191, 36, 0.05); border: 1px solid rgba(251, 191, 36, 0.2); border-radius: 12px; padding: 0.85rem 1rem; margin-top: 0.75rem; align-items: flex-start; gap: 0.75rem; font-size: 0.85rem; line-height: 1.4; color: #fbbf24;">
+          <span style="font-size: 1.2rem; line-height: 1;">⚠️</span>
+          <div style="text-align: left;">
+            <strong>Advertencia de Spam:</strong> Enviar una cantidad elevada de correos desde una cuenta personal de Gmail en un corto período de tiempo puede causar que los servidores de destino envíen tus mensajes a la carpeta de correo no deseado (Spam) o que Google restrinja temporalmente tu cuenta. Se aconseja espaciar los envíos o usar el límite recomendado.
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="emailSubject">Asunto del Correo</label>
+        <input type="text" id="emailSubject" placeholder="Ej: CV - Candidatura espontánea - {nombre_empresa}" required>
+      </div>
+
+      <div class="form-group">
+        <label for="emailBody">Cuerpo del Mensaje</label>
+        <textarea id="emailBody" rows="5" placeholder="Escribe tu carta de presentación aquí. Puedes usar las variables {nombre_empresa} y {nombre_candidato}." required></textarea>
+      </div>
+    </div>
+
+    <!-- Step 3: Pasarela de Pago -->
+    <div class="step-content" id="step3">
+      <h3 style="margin-bottom: 1.5rem; color: var(--accent-color);">Paso 3: Acceso Completo</h3>
+      
+      <p id="paymentIntroText" style="color: var(--text-secondary); margin-bottom: 2rem; line-height: 1.5;">
+        Para tener acceso ilimitado de por vida y realizar todos los envíos que desees en cualquier momento, debes abonar la tarifa única del servicio.
+      </p>
+
+      <div class="mp-box" id="mpBoxElement">
+        <div class="mp-logo">mercado pago</div>
+        <div class="mp-details">
+          <div id="mpCampaignTitle" style="font-weight: 700; font-size: 1.1rem;">Acceso Ilimitado de por Vida - Pergamino</div>
+          <div id="mpCampaignSub" style="color: var(--text-secondary); font-size: 0.9rem;">Pago único para envíos permanentes</div>
+        </div>
+        <div class="mp-price">$50.000</div>
+      </div>
+
+      <!-- Botón de Pago Real de Mercado Pago -->
+      <div id="mpButtonWrapper" style="text-align: center; margin: 2rem 0 1.5rem 0;">
+        <a href="https://mpago.la/13pCrpN" target="_blank" id="btnMercadoPagoReal" style="background: linear-gradient(135deg, #00bee6 0%, #009ee2 100%); color: white; display: inline-flex; align-items: center; justify-content: center; gap: 0.75rem; width: 100%; font-weight: bold; text-decoration: none; padding: 1rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 190, 230, 0.3); transition: transform 0.2s; cursor: pointer; border: none; font-size: 1rem;">
+          💳 Ir a pagar $50.000 con Mercado Pago
+        </a>
+        <small style="display: block; color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.75rem;">
+          Se abrirá el enlace oficial provisto por Mercado Pago en una pestaña nueva.
+        </small>
+      </div>
+
+      <!-- Mensaje de Acceso Ya Pagado (Oculto por defecto) -->
+      <div id="paymentAlreadyActiveBox" style="display: none; background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 16px; padding: 1.5rem; margin-bottom: 2rem; align-items: center; gap: 1.25rem;">
+        <div style="font-size: 2rem; line-height: 1;">🏆</div>
+        <div style="text-align: left; flex-grow: 1;">
+          <h4 style="color: var(--success-color); margin-bottom: 0.25rem; font-weight: 700; font-size: 1.05rem;">¡Acceso Ilimitado Activo!</h4>
+          <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">
+            Detectamos que ya has realizado el pago único de $50.000 en esta máquina. Tienes acceso completo para configurar y enviar los currículums que desees.
+          </p>
+        </div>
+      </div>
+
+      <!-- Contenedor de Confirmación de Pago -->
+      <div id="mpConfirmContainer" style="background: rgba(0, 190, 230, 0.05); border: 1px solid rgba(0, 190, 230, 0.2); border-radius: 12px; padding: 1.25rem; margin: 1.5rem 0; text-align: center;">
+        <p style="margin-top: 0; font-size: 0.9rem; color: var(--text-primary); font-weight: 500;">
+          ¿Ya completaste el pago en la otra pestaña?
+        </p>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+          <input type="checkbox" id="checkPaymentConfirmed" style="width: 18px; height: 18px; cursor: pointer;">
+          <label for="checkPaymentConfirmed" style="margin-bottom: 0; cursor: pointer; font-weight: 600; color: var(--success-color); font-size: 0.9rem;">Sí, ya realicé el pago de $50.000</label>
+        </div>
+      </div>
+
+      <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 1.25rem; font-size: 0.9rem; line-height: 1.5;">
+        <span style="color: var(--accent-color); font-weight: 700;">¿Qué incluye el servicio de acceso ilimitado?</span><br>
+        • Extracción y búsqueda sin límites de empresas en cualquier ciudad.<br>
+        • Envío ilimitado de currículums a todos los rubros elegidos.<br>
+        • Uso del sistema cuantas veces quieras y cuando quieras.<br>
+        • Licencia permanente vinculada a tu navegador.
+      </div>
+    </div>
+
+    <!-- Step 4: Panel de Envío en vivo -->
+    <div class="step-content" id="step4">
+      <h3 style="margin-bottom: 1.5rem; color: var(--success-color);">Paso 4: Consola de Envíos en Vivo</h3>
+
+      <!-- Stats Grid -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="statProspects">0</div>
+          <div class="stat-label">Prospectos</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statSent" style="color: var(--success-color);">0</div>
+          <div class="stat-label">Enviados</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statRemaining">50</div>
+          <div class="stat-label">Pendientes</div>
+        </div>
+      </div>
+
+      <div class="sending-progress-bar-container">
+        <div class="sending-progress-bar" id="sendingProgressBar"></div>
+      </div>
+
+      <!-- Realtime console log box -->
+      <div class="console-box" id="consoleBox">
+        <div class="console-line line-info">[SISTEMA] Consola inicializada. Esperando inicio de campaña...</div>
+      </div>
+
+      <!-- Botón para iniciar otra campaña (Acceso Ilimitado) -->
+      <div style="text-align: center;">
+        <button class="btn btn-primary" id="btnNewCampaign" style="display: none; width: 100%; margin-top: 0.5rem; box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);">
+          ✨ Iniciar Nueva Campaña (Acceso Ilimitado)
+        </button>
+      </div>
+    </div>
+
+    <!-- Wizard Navigation buttons -->
+    <div class="btn-group">
+      <button class="btn btn-secondary" id="btnPrev" disabled>Atrás</button>
+      <button class="btn btn-primary" id="btnNext">Siguiente</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

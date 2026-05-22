@@ -1,0 +1,9 @@
+{
+  "name": "winktact-email-web",
+  "version": "1.0.0",
+  "description": "Envío Inteligente de CV a empresas locales",
+  "main": "app.js",
+  "dependencies": {
+    "nodemailer": "^6.9.13"
+  }
+}

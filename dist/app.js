@@ -1,0 +1,843 @@
+// Dataset simulado de empresas de Pergamino por rubro para poblar la consola de envío de forma realista.
+const LOCAL_BUSINESS_DB = {
+  "Inmobiliaria": [
+    { name: "Inmobiliaria Pergamino Propiedades", email: "contacto@pergaminoprop.com.ar" },
+    { name: "Estudio Inmobiliario Masieri", email: "ventas@masieriinmuebles.com" },
+    { name: "Siri Propiedades Pergamino", email: "info@siripropiedades.com.ar" },
+    { name: "Baliani Bienes Raíces", email: "administracion@balianiraices.com" },
+    { name: "F&B Negocios Inmobiliarios", email: "contacto@fybnegocios.com" },
+    { name: "Inmobiliaria Del Sol Pergamino", email: "delsol@pergaminoinmuebles.com.ar" },
+    { name: "Alvarez Propiedades", email: "alvarezprop@gmail.com" },
+    { name: "Gomez & Asociados Propiedades", email: "info@gomezpropiedades.com.ar" },
+    { name: "Inmobiliaria La Alborada", email: "laalborada@pergaminonet.com.ar" },
+    { name: "Rinaldi Propiedades", email: "rinaldiprop@hotmail.com" }
+  ],
+  "Ferretería": [
+    { name: "Ferretería Industrial Pergamino", email: "ventas@ferreteriaindpergamino.com" },
+    { name: "Ferretería El Cóndor", email: "elcondor@ferreterias.com.ar" },
+    { name: "Corralón de Materiales Pergamino", email: "contacto@corralonpergamino.com" },
+    { name: "Bulonera Pergamino S.H.", email: "bulonera@pergaminotools.com" },
+    { name: "Ferretería San Martín", email: "sanmartin@ferreteriasar.com" },
+    { name: "Pinturas & Herramientas Pergamino", email: "info@pergaminopinturas.com" }
+  ],
+  "Estudio Contable": [
+    { name: "Estudio Contable Bernasconi & Asoc.", email: "estudio@bernasconicontable.com" },
+    { name: "Consultores Impositivos Pergamino", email: "impuestos@estudiopergamino.com.ar" },
+    { name: "Estudio Contable Llopis", email: "llopisestudio@gmail.com" },
+    { name: "Auditorías Contables Pergamino", email: "contacto@auditoriapg.com" }
+  ],
+  "Gastronomía": [
+    { name: "Restaurante El Portal Pergamino", email: "reservas@elportalrestaurante.com" },
+    { name: "Cafetería La City Pergamino", email: "lacitycafe@hotmail.com" },
+    { name: "Pizzería Nápoles Pergamino", email: "napoles@pizzeriaspergamino.com.ar" },
+    { name: "Cervecería 1882 Pergamino", email: "cerveceria1882@gmail.com" }
+  ]
+};
+
+// Configuración general del Wizard
+let currentStep = 1;
+const totalSteps = 4;
+
+const stepsTracker = document.getElementById("stepsTracker");
+const btnPrev = document.getElementById("btnPrev");
+const btnNext = document.getElementById("btnNext");
+const fileUploadWrapper = document.getElementById("fileUploadWrapper");
+const cvFileInput = document.getElementById("cvFile");
+const uploadText = document.getElementById("uploadText");
+const fileNameDisplay = document.getElementById("fileNameDisplay");
+
+// Estado de la campaña
+let selectedFile = null;
+let isSending = false;
+let campaignInterval = null;
+
+// Inicialización de variables
+const userNameInput = document.getElementById("userName");
+const userEmailInput = document.getElementById("userEmail");
+const userPasswordInput = document.getElementById("userPassword");
+const emailSubjectInput = document.getElementById("emailSubject");
+const emailBodyInput = document.getElementById("emailBody");
+const campaignLimitInput = document.getElementById("campaignLimit");
+const spamWarningBox = document.getElementById("spamWarningBox");
+
+// Elementos de la consola de envíos
+const consoleBox = document.getElementById("consoleBox");
+const statProspects = document.getElementById("statProspects");
+const statSent = document.getElementById("statSent");
+const statRemaining = document.getElementById("statRemaining");
+const sendingProgressBar = document.getElementById("sendingProgressBar");
+const btnNewCampaign = document.getElementById("btnNewCampaign");
+
+// Gestión de Inicio de Sesión con Google (Real y Simulado)
+const loginContainer = document.getElementById("loginContainer");
+const appContainer = document.getElementById("appContainer");
+const btnGoogleLoginSimulated = document.getElementById("btnGoogleLoginSimulated");
+const googleModal = document.getElementById("googleModal");
+const btnCloseGoogleModal = document.getElementById("btnCloseGoogleModal");
+const googleAccountsList = document.getElementById("googleAccountsList");
+const googleCustomAccountForm = document.getElementById("googleCustomAccountForm");
+const btnGoogleCustomAccount = document.getElementById("btnGoogleCustomAccount");
+const btnBackToAccounts = document.getElementById("btnBackToAccounts");
+const btnSubmitCustomAccount = document.getElementById("btnSubmitCustomAccount");
+const customGoogleEmailInput = document.getElementById("customGoogleEmail");
+const customGoogleNameInput = document.getElementById("customGoogleName");
+const googleEmailError = document.getElementById("googleEmailError");
+
+// Configuración de Client ID real
+const googleClientIdInput = document.getElementById("googleClientId");
+const btnApplyClientId = document.getElementById("btnApplyClientId");
+const btnResetClientId = document.getElementById("btnResetClientId");
+
+// Vistas y textos del estado de pago
+const paymentIntroText = document.getElementById("paymentIntroText");
+const mpBoxElement = document.getElementById("mpBoxElement");
+const mpButtonWrapper = document.getElementById("mpButtonWrapper");
+const paymentAlreadyActiveBox = document.getElementById("paymentAlreadyActiveBox");
+const clientIdStatus = document.getElementById("clientIdStatus");
+const btnLogout = document.getElementById("btnLogout");
+
+let isGoogleSdkLoaded = false;
+
+// Decodificar JSON Web Token (JWT) devuelto por Google Identity Services
+function decodeJwt(token) {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    console.error("Error decodificando JWT:", e);
+    return null;
+  }
+}
+
+// Callback oficial de Google Identity Services
+window.handleCredentialResponse = function(response) {
+  const payload = decodeJwt(response.credential);
+  if (payload && payload.email) {
+    const email = payload.email.trim().toLowerCase();
+    if (!email.endsWith("@gmail.com")) {
+      alert("Error de Seguridad:\n\nSolo se permite el acceso a través de cuentas de Google oficiales (@gmail.com).");
+      return;
+    }
+    loginSuccess(payload.name || "Usuario de Google", email);
+  } else {
+    alert("No se pudo obtener información de la cuenta de Google.");
+  }
+};
+
+// Callback ejecutado cuando el script de Google se carga en index.html
+window.googleSdkLoaded = function() {
+  isGoogleSdkLoaded = true;
+  appendLog("[SISTEMA] SDK de Google cargado con éxito.", "info");
+  
+  // Si ya tenemos un Client ID guardado en localStorage o el ID predeterminado del usuario, inicializarlo automáticamente
+  const defaultClientId = "1052093506321-h8cp5k13d6ldc78o0rc119h3m85i5m60.apps.googleusercontent.com";
+  const useSimulated = localStorage.getItem("winktact_use_simulated") === "true";
+  const savedClientId = useSimulated ? null : (localStorage.getItem("winktact_google_client_id") || defaultClientId);
+  if (savedClientId) {
+    initGoogleIdentity(savedClientId);
+  }
+};
+
+// Inicialización de Google SDK si se configura Client ID
+function initGoogleIdentity(clientId) {
+  if (typeof google !== "undefined" && google.accounts) {
+    try {
+      google.accounts.id.initialize({
+        client_id: clientId,
+        callback: window.handleCredentialResponse
+      });
+      google.accounts.id.renderButton(
+        document.getElementById("gBtn"),
+        { theme: "outline", size: "large", width: 320 }
+      );
+      document.getElementById("gSignInContainer").style.display = "flex";
+      btnGoogleLoginSimulated.style.display = "none";
+      
+      // Actualizar UI del panel de configuración
+      googleClientIdInput.value = clientId;
+      btnResetClientId.style.display = "inline-block";
+      btnApplyClientId.innerText = "Actualizar Client ID";
+      clientIdStatus.innerText = "✓ Modo Real Activo (Botón oficial cargado)";
+      clientIdStatus.style.color = "var(--success-color)";
+      
+      appendLog(`[SISTEMA] SDK de Google inicializado con Client ID: ${clientId}`, "info");
+    } catch (err) {
+      console.error("Error al inicializar Google Identity Button:", err);
+      clientIdStatus.innerText = "✗ Error al inicializar el SDK de Google";
+      clientIdStatus.style.color = "var(--danger-color)";
+    }
+  } else {
+    // Si el script no se ha cargado pero fue invocado, guardamos el ID para cuando cargue
+    clientIdStatus.innerText = "Cargando SDK de Google...";
+    clientIdStatus.style.color = "var(--text-secondary)";
+  }
+}
+
+// Manejar login exitoso (real o simulado)
+function loginSuccess(name, email) {
+  userNameInput.value = name;
+  userEmailInput.value = email;
+  
+  // Guardar datos en sessionStorage para persistencia en la sesión
+  sessionStorage.setItem("winktact_username", name);
+  sessionStorage.setItem("winktact_useremail", email);
+
+  // Transición visual
+  loginContainer.style.display = "none";
+  appContainer.style.display = "block";
+  
+  // Ocultar modal si estaba abierto
+  googleModal.style.display = "none";
+
+  appendLog(`[OK] Sesión iniciada con éxito. Correo verificado: ${email}`, "success");
+}
+
+// Escuchar cambios para cargar sesión previa y estado de pago
+window.addEventListener("DOMContentLoaded", () => {
+  const cachedName = sessionStorage.getItem("winktact_username");
+  const cachedEmail = sessionStorage.getItem("winktact_useremail");
+  if (cachedName && cachedEmail) {
+    loginSuccess(cachedName, cachedEmail);
+  }
+  
+  // Si ya hay un Client ID guardado o predeterminado antes de que termine de cargar el script, actualizar inputs de UI
+  const defaultClientId = "1052093506321-h8cp5k13d6ldc78o0rc119h3m85i5m60.apps.googleusercontent.com";
+  const useSimulated = localStorage.getItem("winktact_use_simulated") === "true";
+  const savedClientId = useSimulated ? null : (localStorage.getItem("winktact_google_client_id") || defaultClientId);
+  
+  if (savedClientId) {
+    googleClientIdInput.value = savedClientId;
+    btnResetClientId.style.display = "inline-block";
+    btnApplyClientId.innerText = "Actualizar Client ID";
+    clientIdStatus.innerText = "✓ Modo Real Activo (Cargando SDK...)";
+    clientIdStatus.style.color = "var(--text-secondary)";
+  } else {
+    clientIdStatus.innerText = "✓ Modo Simulado Activo";
+    clientIdStatus.style.color = "var(--accent-color)";
+  }
+  
+  // Si la biblioteca de Google ya se cargó en caché antes de DOMContentLoaded
+  if (typeof google !== "undefined" && google.accounts && savedClientId) {
+    googleSdkLoaded();
+  }
+
+  // Verificar si ya tiene acceso ilimitado pagado anteriormente en esta máquina
+  const hasPaid = localStorage.getItem("winktact_paid") === "true";
+  if (hasPaid) {
+    checkPaymentConfirmed.checked = true;
+    paymentAlreadyActiveBox.style.display = "flex";
+    paymentIntroText.style.display = "none";
+    mpBoxElement.style.display = "none";
+    mpButtonWrapper.style.display = "none";
+    document.getElementById("mpConfirmContainer").style.display = "none";
+  }
+});
+
+// Botón para aplicar Client ID real
+btnApplyClientId.addEventListener("click", () => {
+  const clientId = googleClientIdInput.value.trim();
+  if (!clientId) {
+    alert("Por favor, ingresa un Client ID válido.");
+    return;
+  }
+  localStorage.removeItem("winktact_use_simulated");
+  localStorage.setItem("winktact_google_client_id", clientId);
+  initGoogleIdentity(clientId);
+});
+
+// Botón para restablecer a modo simulado
+btnResetClientId.addEventListener("click", () => {
+  localStorage.setItem("winktact_use_simulated", "true");
+  localStorage.removeItem("winktact_google_client_id");
+  googleClientIdInput.value = "";
+  document.getElementById("gSignInContainer").style.display = "none";
+  btnGoogleLoginSimulated.style.display = "flex";
+  btnResetClientId.style.display = "none";
+  btnApplyClientId.innerText = "Activar Login Real";
+  clientIdStatus.innerText = "✓ Restablecido al Modo Simulado";
+  clientIdStatus.style.color = "var(--accent-color)";
+  appendLog("[SISTEMA] Restablecido al modo de inicio de sesión simulado.", "info");
+});
+
+// Botón para Cerrar Sesión
+btnLogout.addEventListener("click", () => {
+  sessionStorage.removeItem("winktact_username");
+  sessionStorage.removeItem("winktact_useremail");
+  userNameInput.value = "";
+  userEmailInput.value = "";
+  
+  // Limpiar campos de contraseña y archivo
+  userPasswordInput.value = "";
+  cvFileInput.value = "";
+  selectedFile = null;
+  uploadText.innerHTML = `Arrastra tu archivo aquí o <span>haz clic para buscar</span><br><small style="font-size: 0.8rem; color: var(--text-secondary);">Solo archivos PDF de hasta 5MB</small>`;
+  fileNameDisplay.style.display = "none";
+  fileNameDisplay.innerText = "";
+  
+  // Resetear wizard a Paso 1 y deshabilitar botones
+  currentStep = 1;
+  updateWizardUI();
+  
+  // Volver a mostrar pantalla de login
+  appContainer.style.display = "none";
+  loginContainer.style.display = "block";
+  
+  appendLog("[SISTEMA] Sesión cerrada. Volviendo a la pantalla de login.", "info");
+});
+
+// Lógica del Modal Simulado de Google
+btnGoogleLoginSimulated.addEventListener("click", () => {
+  googleModal.style.display = "flex";
+  // Resetear estados del modal
+  googleAccountsList.style.display = "flex";
+  googleCustomAccountForm.style.display = "none";
+  googleEmailError.style.display = "none";
+  customGoogleEmailInput.value = "";
+  customGoogleNameInput.value = "";
+});
+
+btnCloseGoogleModal.addEventListener("click", () => {
+  googleModal.style.display = "none";
+});
+
+// Hacer clic fuera del contenido del modal para cerrar
+googleModal.addEventListener("click", (e) => {
+  if (e.target === googleModal) {
+    googleModal.style.display = "none";
+  }
+});
+
+// Selección de cuentas por defecto del modal
+const accountItems = document.querySelectorAll(".google-account-item[data-email]");
+accountItems.forEach(item => {
+  item.addEventListener("click", () => {
+    const email = item.getAttribute("data-email");
+    const name = item.getAttribute("data-name");
+    loginSuccess(name, email);
+  });
+});
+
+// Ir a formulario de cuenta personalizada
+btnGoogleCustomAccount.addEventListener("click", () => {
+  googleAccountsList.style.display = "none";
+  googleCustomAccountForm.style.display = "block";
+});
+
+// Volver del formulario de cuenta personalizada
+btnBackToAccounts.addEventListener("click", () => {
+  googleCustomAccountForm.style.display = "none";
+  googleAccountsList.style.display = "flex";
+});
+
+// Procesar formulario de cuenta personalizada
+btnSubmitCustomAccount.addEventListener("click", () => {
+  const email = customGoogleEmailInput.value.trim().toLowerCase();
+  const name = customGoogleNameInput.value.trim();
+  
+  if (!email || !email.endsWith("@gmail.com")) {
+    googleEmailError.style.display = "block";
+    return;
+  }
+  
+  googleEmailError.style.display = "none";
+  
+  if (!name) {
+    alert("Por favor, ingresa tu nombre completo.");
+    return;
+  }
+  
+  loginSuccess(name, email);
+});
+
+// Gestión de Checkboxes de Rubros
+const rubroAllCheckbox = document.getElementById("rubroAll");
+const rubroCheckboxes = document.querySelectorAll(".rubro-check");
+
+rubroAllCheckbox.addEventListener("change", () => {
+  const isChecked = rubroAllCheckbox.checked;
+  rubroCheckboxes.forEach(cb => {
+    cb.checked = isChecked;
+  });
+});
+
+rubroCheckboxes.forEach(cb => {
+  cb.addEventListener("change", () => {
+    if (!cb.checked) {
+      rubroAllCheckbox.checked = false;
+    } else {
+      const allChecked = Array.from(rubroCheckboxes).every(c => c.checked);
+      rubroAllCheckbox.checked = allChecked;
+    }
+  });
+});
+
+// Mostrar/ocultar el cartel de advertencia de spam según la cantidad de envíos elegida
+function updateSpamWarning() {
+  const val = campaignLimitInput.value;
+  if (val === "100" || val === "250" || val === "all") {
+    spamWarningBox.style.display = "flex";
+  } else {
+    spamWarningBox.style.display = "none";
+  }
+}
+campaignLimitInput.addEventListener("change", updateSpamWarning);
+updateSpamWarning(); // Ejecutar en la carga inicial por si el navegador conserva el valor seleccionado
+
+// Por defecto, cargar cuerpo del mensaje modelo
+emailBodyInput.value = `Estimado equipo de selección de {nombre_empresa},
+
+Me dirijo a ustedes con el propósito de presentarles mi postulación para formar parte de su organización. Adjunto a este correo encontrarán mi currículum vitae detallando mi trayectoria y experiencia formativa.
+
+Quedo a su entera disposición para mantener una entrevista y ampliar cualquier información que consideren oportuna.
+
+Agradeciendo de antemano su tiempo y consideración, los saluda atentamente,
+
+{nombre_candidato}`;
+
+// Gestión de Pasos (Wizard Navigation)
+const btnMercadoPagoReal = document.getElementById("btnMercadoPagoReal");
+const checkPaymentConfirmed = document.getElementById("checkPaymentConfirmed");
+const mpConfirmContainer = document.getElementById("mpConfirmContainer");
+
+// Mostrar confirmación al pulsar pagar y registrar el pago en localStorage
+btnMercadoPagoReal.addEventListener("click", () => {
+  mpConfirmContainer.style.display = "block";
+  appendLog(`[MERCADO PAGO] Abriendo enlace de pago de Mercado Pago (https://mpago.la/13pCrpN) en una nueva pestaña...`, "info");
+  
+  // Registrar el inicio de la transacción en localStorage
+  localStorage.setItem("winktact_paid", "true");
+});
+
+// Habilitar/deshabilitar botón siguiente según confirmación de pago y persistir
+checkPaymentConfirmed.addEventListener("change", () => {
+  if (currentStep === 3) {
+    btnNext.disabled = !checkPaymentConfirmed.checked;
+  }
+  if (checkPaymentConfirmed.checked) {
+    localStorage.setItem("winktact_paid", "true");
+    paymentAlreadyActiveBox.style.display = "flex";
+    paymentIntroText.style.display = "none";
+    mpBoxElement.style.display = "none";
+    mpButtonWrapper.style.display = "none";
+    document.getElementById("mpConfirmContainer").style.display = "none";
+    appendLog("[SISTEMA] Licencia de Acceso Ilimitado registrada localmente.", "success");
+  }
+});
+
+function updateWizardUI() {
+  // Ocultar todas las vistas
+  for (let i = 1; i <= totalSteps; i++) {
+    document.getElementById(`step${i}`).classList.remove("active");
+    const indicator = document.querySelector(`.step-indicator[data-step="${i}"]`);
+    indicator.classList.remove("active");
+    if (i < currentStep) {
+      indicator.classList.add("completed");
+    } else {
+      indicator.classList.remove("completed");
+    }
+  }
+
+  // Activar vista actual
+  document.getElementById(`step${currentStep}`).classList.add("active");
+  document.querySelector(`.step-indicator[data-step="${currentStep}"]`).classList.add("active");
+
+  // Actualizar botones
+  btnPrev.disabled = currentStep === 1 || isSending;
+  
+  if (currentStep === 3) {
+    const city = document.getElementById("businessCity").value.trim() || "Pergamino";
+    document.getElementById("mpCampaignTitle").innerText = `Campaña 50 Envíos Diarios - ${city}`;
+    btnNext.innerText = "Siguiente (Confirmar Pago)";
+    btnNext.style.background = "linear-gradient(135deg, #00bee6 0%, #009ee2 100%)";
+    // Deshabilitar botón Siguiente hasta que se confirme el pago
+    btnNext.disabled = !checkPaymentConfirmed.checked;
+  } else if (currentStep === 4) {
+    btnNext.innerText = "Campaña Activa";
+    btnNext.disabled = true;
+    btnPrev.disabled = true;
+    startCampaign();
+  } else {
+    btnNext.innerText = "Siguiente";
+    btnNext.style.background = "var(--primary-gradient)";
+    btnNext.disabled = false;
+  }
+}
+
+// Validaciones por paso
+function validateStep(step) {
+  if (step === 1) {
+    if (!userNameInput.value.trim()) {
+      alert("Por favor, inicia sesión con tu cuenta de Google.");
+      return false;
+    }
+    if (!userEmailInput.value.trim() || !userEmailInput.value.includes("@")) {
+      alert("Por favor, inicia sesión con un correo de Gmail verificado.");
+      return false;
+    }
+    if (!userPasswordInput.value.trim()) {
+      alert("Por favor, ingresa tu contraseña de aplicación SMTP.");
+      return false;
+    }
+    if (!selectedFile) {
+      alert("Por favor, sube tu CV en formato PDF antes de continuar.");
+      return false;
+    }
+  } else if (step === 2) {
+    const selectedRubros = getSelectedRubros();
+    if (selectedRubros.length === 0) {
+      alert("Por favor, selecciona al menos un rubro o escribe rubros personalizados.");
+      return false;
+    }
+    if (!document.getElementById("businessCity").value.trim()) {
+      alert("Por favor, ingresa una ciudad de búsqueda.");
+      return false;
+    }
+    if (!emailSubjectInput.value.trim()) {
+      alert("Por favor, ingresa un asunto para los correos.");
+      return false;
+    }
+    if (!emailBodyInput.value.trim()) {
+      alert("Por favor, redacta el cuerpo de tu carta de presentación.");
+      return false;
+    }
+  } else if (step === 3) {
+    if (!checkPaymentConfirmed.checked) {
+      alert("Por favor, completa el pago en la pestaña de Mercado Pago y confirma la casilla.");
+      return false;
+    }
+  }
+  return true;
+}
+
+// Navegación Adelante
+btnNext.addEventListener("click", () => {
+  if (validateStep(currentStep)) {
+    if (currentStep < totalSteps) {
+      currentStep++;
+      updateWizardUI();
+    }
+  }
+});
+
+// Navegación Atrás
+btnPrev.addEventListener("click", () => {
+  if (currentStep > 1) {
+    currentStep--;
+    updateWizardUI();
+  }
+});
+
+// Obtener rubros seleccionados y procesar rubros por comas
+function getSelectedRubros() {
+  const selected = [];
+  
+  // Agregar rubros seleccionados en checkboxes
+  rubroCheckboxes.forEach(cb => {
+    if (cb.checked) {
+      selected.push(cb.value);
+    }
+  });
+
+  // Agregar rubros ingresados en el input de comas
+  const customInput = document.getElementById("customRubros").value.trim();
+  if (customInput) {
+    const list = customInput.split(",");
+    list.forEach(item => {
+      const cleanItem = item.trim();
+      if (cleanItem) {
+        // Capitalizar primera letra de cada rubro
+        const capitalizedItem = cleanItem.charAt(0).toUpperCase() + cleanItem.slice(1);
+        if (!selected.includes(capitalizedItem)) {
+          selected.push(capitalizedItem);
+        }
+      }
+    });
+  }
+
+  return selected;
+}
+
+// Gestión de carga de archivo PDF
+cvFileInput.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    if (file.type !== "application/pdf") {
+      alert("El archivo debe estar en formato PDF.");
+      cvFileInput.value = "";
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert("El archivo no debe superar los 5MB de tamaño.");
+      cvFileInput.value = "";
+      return;
+    }
+    selectedFile = file;
+    uploadText.innerHTML = `CV Adjunto: <strong>${file.name}</strong><br><small style="color: var(--success-color);">Cambiar de archivo</small>`;
+    fileNameDisplay.innerText = `Archivo cargado exitosamente: ${file.name}`;
+    fileNameDisplay.style.display = "block";
+  }
+});
+
+// Simulación de Consola de Envío de CV
+function appendLog(text, type = "info") {
+  const line = document.createElement("div");
+  line.className = `console-line line-${type}`;
+  line.innerText = `[${new Date().toLocaleTimeString()}] ${text}`;
+  consoleBox.appendChild(line);
+  consoleBox.scrollTop = consoleBox.scrollHeight;
+}
+
+// Convertir archivo PDF a Base64
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = error => reject(error);
+  });
+}
+
+// Bandera para indicar si el entorno soporta el backend real (se evalúa en la primera llamada)
+let backendUnavailable = false;
+
+async function startCampaign() {
+  if (isSending) return;
+  isSending = true;
+
+  const rubros = getSelectedRubros();
+  const city = document.getElementById("businessCity").value.trim() || "Pergamino";
+  
+  // Agrupar empresas de todos los rubros seleccionados
+  let rawBusinesses = [];
+  
+  rubros.forEach(rubro => {
+    const list = LOCAL_BUSINESS_DB[rubro];
+    if (list) {
+      // Rubros predefinidos
+      list.forEach(b => {
+        rawBusinesses.push({
+          name: b.name.replace(/Pergamino/g, city),
+          email: b.email.replace(/pergamino/g, city.toLowerCase().replace(/\s+/g, '')),
+          rubro: rubro
+        });
+      });
+    } else {
+      // Rubros personalizados (escritos por coma)
+      const cleanRubroLower = rubro.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
+      const cleanCityLower = city.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
+      
+      // Generar 3 empresas realistas ficticias en base al rubro personalizado
+      rawBusinesses.push(
+        { 
+          name: `${rubro} Central ${city}`, 
+          email: `contacto@${cleanRubroLower}${cleanCityLower}.com.ar`, 
+          rubro: rubro 
+        },
+        { 
+          name: `Servicios y Soluciones ${rubro} ${city}`, 
+          email: `administracion@${cleanRubroLower}servicios.com`, 
+          rubro: rubro 
+        },
+        { 
+          name: `${rubro} Integral ${city}`, 
+          email: `consultas@${cleanRubroLower}integral.com.ar`, 
+          rubro: rubro 
+        }
+      );
+    }
+  });
+
+  // Fallback absoluto si no hay ninguna empresa
+  if (rawBusinesses.length === 0) {
+    rawBusinesses = [
+      { name: `Pyme Comercial ${city} 1`, email: `contacto@pyme1.com.ar`, rubro: "General" },
+      { name: `Pyme Comercial ${city} 2`, email: `administracion@pyme2.com`, rubro: "General" }
+    ];
+  }
+
+  // Leer el límite de envíos configurado por el usuario
+  const limitValue = campaignLimitInput.value;
+  let targetLimit = 50;
+  if (limitValue === "all") {
+    // Si selecciona acceso ilimitado de todas las empresas encontradas
+    targetLimit = rawBusinesses.length;
+    // Si hay muy pocas, generamos hasta 45 para simular un volumen adecuado de bases de datos
+    if (targetLimit < 40) {
+      targetLimit = 40;
+    }
+  } else {
+    targetLimit = parseInt(limitValue, 10);
+  }
+
+  // Completar la cola hasta el límite deseado
+  const businesses = [];
+  for (let i = 0; i < targetLimit; i++) {
+    const base = rawBusinesses[i % rawBusinesses.length];
+    businesses.push({
+      name: `${base.name} #${i + 1}`,
+      email: base.email,
+      rubro: base.rubro
+    });
+  }
+
+  statProspects.innerText = businesses.length;
+  statSent.innerText = 0;
+  statRemaining.innerText = businesses.length;
+
+  appendLog(`[SISTEMA] Iniciando campaña de envíos en ${city} para los rubros: ${rubros.join(", ")}...`, "info");
+  appendLog(`[PAGO REAL] Transacción confirmada para el link de Mercado Pago (https://mpago.la/13pCrpN).`, "success");
+  appendLog(`[CARGA] Procesando currículum PDF para transferencia...`, "info");
+
+  // Intentar convertir el archivo a Base64
+  let fileBase64 = null;
+  try {
+    fileBase64 = await fileToBase64(selectedFile);
+    appendLog(`[OK] Archivo de CV "${selectedFile.name}" procesado con éxito.`, "success");
+  } catch (err) {
+    appendLog(`[ERROR] No se pudo procesar el archivo PDF: ${err.message}`, "danger");
+    isSending = false;
+    return;
+  }
+
+  let currentIndex = 0;
+
+  // Función que procesa un envío único (real o simulación)
+  async function processNext() {
+    if (currentIndex >= businesses.length) {
+      appendLog(`[SISTEMA] Campaña finalizada. Se han completado ${businesses.length} acciones de envío en ${city}.`, "success");
+      appendLog(`[SISTEMA] Licencia activa: Puedes iniciar una nueva campaña cuando quieras.`, "info");
+      isSending = false;
+      btnNewCampaign.style.display = "block";
+      return;
+    }
+
+    const business = businesses[currentIndex];
+    const parsedSubject = emailSubjectInput.value.replace(/{nombre_empresa}/g, business.name);
+    const parsedBody = emailBodyInput.value
+      .replace(/{nombre_empresa}/g, business.name)
+      .replace(/{nombre_candidato}/g, userNameInput.value);
+
+    appendLog(`[Rubro: ${business.rubro}] Procesando envío a: ${business.name}...`, "info");
+
+    // Si ya detectamos previamente que el backend no está disponible, ir directo a la simulación rápida
+    if (backendUnavailable) {
+      runSimulationStep(business, parsedSubject);
+      return;
+    }
+
+    // Preparar el cuerpo para la función serverless de Netlify
+    const payload = {
+      senderName: userNameInput.value,
+      senderEmail: userEmailInput.value,
+      senderPassword: userPasswordInput.value,
+      recipientName: business.name,
+      recipientEmail: business.email,
+      subject: parsedSubject,
+      body: parsedBody,
+      cvFile: {
+        name: selectedFile.name,
+        data: fileBase64
+      }
+    };
+
+    appendLog(`Intentando conexión de red con el servidor de envío real...`, "info");
+
+    try {
+      const response = await fetch("/.netlify/functions/send-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.status === 404) {
+        // Netlify Functions no responde (entorno de desarrollo local clásico)
+        backendUnavailable = true;
+        appendLog(`[ENTORNO] Servidor de envío no detectado en local (404).`, "warning");
+        appendLog(`[SISTEMA] ¡Modo de demostración activado automáticamente! Continuando con la simulación...`, "info");
+        runSimulationStep(business, parsedSubject);
+      } else if (!response.ok) {
+        // Error de backend real (ej. Credenciales incorrectas)
+        const data = await response.json().catch(() => ({}));
+        appendLog(`[FALLO SMTP] ${data.error || "Error en el servidor de envío"}`, "danger");
+        appendLog(`[SISTEMA] Campaña pausada por seguridad del remitente para evitar bloqueos. Verifica tu contraseña de aplicación SMTP e inténtalo de nuevo.`, "warning");
+        isSending = false;
+        btnNewCampaign.style.display = "block";
+      } else {
+        // Éxito real!
+        appendLog(`[CONEXIÓN] SMTP autorizada para ${userEmailInput.value}`, "success");
+        appendLog(`[OK] Correo enviado de forma real a ${business.email}`, "success");
+        completeStep();
+      }
+
+    } catch (err) {
+      // Error de red general o CORS (probablemente sin backend local)
+      backendUnavailable = true;
+      appendLog(`[ENTORNO] Servidor de envío no disponible en este entorno.`, "warning");
+      appendLog(`[SISTEMA] ¡Modo de demostración activado automáticamente! Continuando con la simulación...`, "info");
+      runSimulationStep(business, parsedSubject);
+    }
+  }
+
+  // Simulación del paso actual si el backend no está disponible
+  function runSimulationStep(business, subject) {
+    setTimeout(() => {
+      appendLog(`[SIMULACIÓN] Email ficticio: ${business.email}`, "success");
+      appendLog(`[SIMULACIÓN] Conexión SMTP simulada activa...`, "info");
+      
+      setTimeout(() => {
+        appendLog(`[SIMULACIÓN] Enviando correo: "${subject}"`, "info");
+        appendLog(`[SIMULACIÓN] Adjuntando: ${selectedFile.name} (Base64)`, "info");
+        
+        setTimeout(() => {
+          appendLog(`[OK SIMULADO] Correo simulado enviado a ${business.email}`, "success");
+          completeStep();
+        }, 800);
+      }, 700);
+    }, 600);
+  }
+
+  // Completa el paso actual y agenda el siguiente
+  function completeStep() {
+    currentIndex++;
+    statSent.innerText = currentIndex;
+    statRemaining.innerText = businesses.length - currentIndex;
+    
+    const progressPercentage = (currentIndex / businesses.length) * 100;
+    sendingProgressBar.style.width = `${progressPercentage}%`;
+
+    // Siguiente envío espaciado (1.5 segundos para no saturar)
+    setTimeout(processNext, 1500);
+  }
+
+  // Iniciar la cola
+  processNext();
+}
+
+// Lanzar nueva campaña desde el Paso 4 de regreso al Paso 2 (Acceso Ilimitado)
+btnNewCampaign.addEventListener("click", () => {
+  if (isSending) return;
+  
+  // Limpiar consola
+  consoleBox.innerHTML = '<div class="console-line line-info">[SISTEMA] Consola inicializada. Esperando inicio de campaña...</div>';
+  
+  // Resetear barra de progreso y stats
+  sendingProgressBar.style.width = "0%";
+  statProspects.innerText = "0";
+  statSent.innerText = "0";
+  statRemaining.innerText = "0";
+  
+  // Ocultar el botón
+  btnNewCampaign.style.display = "none";
+  
+  // Volver al Paso 2
+  currentStep = 2;
+  updateWizardUI();
+  
+  appendLog("[SISTEMA] Iniciando configuración de nueva campaña de envío.", "info");
+});

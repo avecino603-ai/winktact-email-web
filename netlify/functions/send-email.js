@@ -1,0 +1,96 @@
+const nodemailer = require("nodemailer");
+
+exports.handler = async (event, context) => {
+  // Configuración de cabeceras CORS para permitir llamadas desde el frontend
+  const headers = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS"
+  };
+
+  // Responder de inmediato a solicitudes OPTIONS (Preflight)
+  if (event.httpMethod === "OPTIONS") {
+    return { statusCode: 200, headers, body: "" };
+  }
+
+  // Solo permitir peticiones POST
+  if (event.httpMethod !== "POST") {
+    return { statusCode: 405, headers, body: JSON.stringify({ error: "Método no permitido" }) };
+  }
+
+  try {
+    const body = JSON.parse(event.body);
+    const { 
+      senderName, 
+      senderEmail, 
+      senderPassword, 
+      recipientName, 
+      recipientEmail, 
+      subject, 
+      body: emailBody, 
+      cvFile 
+    } = body;
+
+    // Validación básica de campos obligatorios
+    if (!senderEmail || !senderPassword || !recipientEmail || !subject || !emailBody || !cvFile || !cvFile.data) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: "Faltan datos obligatorios para el envío (correo emisor, contraseña SMTP, correo destinatario, mensaje o archivo PDF)." })
+      };
+    }
+
+    // Configurar el transportador SMTP para Gmail
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: senderEmail,
+        pass: senderPassword
+      }
+    });
+
+    // Decodificar el archivo PDF adjunto enviado en Base64
+    const base64Data = cvFile.data.split(";base64,").pop();
+    const attachmentBuffer = Buffer.from(base64Data, "base64");
+
+    // Configurar el correo electrónico
+    const mailOptions = {
+      from: `"${senderName}" <${senderEmail}>`,
+      to: recipientEmail,
+      subject: subject,
+      text: emailBody,
+      attachments: [
+        {
+          filename: cvFile.name || "Curriculum_Vitae.pdf",
+          content: attachmentBuffer,
+          contentType: "application/pdf"
+        }
+      ]
+    };
+
+    // Enviar el correo electrónico mediante nodemailer
+    await transporter.sendMail(mailOptions);
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ success: true, message: `Correo enviado con éxito a ${recipientEmail}` })
+    };
+
+  } catch (error) {
+    console.error("Error al enviar correo SMTP:", error);
+    
+    // Devolver mensaje detallado del error SMTP (ej. Credenciales incorrectas)
+    let errorMessage = error.message || "Error desconocido al procesar el envío SMTP.";
+    
+    if (errorMessage.includes("Invalid login") || errorMessage.includes("Username and Password not accepted")) {
+      errorMessage = "Credenciales SMTP inválidas. Asegúrate de estar usando tu dirección de Gmail y una 'Contraseña de aplicación' de 16 dígitos válida, no tu clave de Google normal.";
+    }
+
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: errorMessage })
+    };
+  }
+};
