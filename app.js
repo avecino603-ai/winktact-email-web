@@ -1,36 +1,482 @@
 // Dataset simulado de empresas de Pergamino por rubro para poblar la consola de envío de forma realista.
 const LOCAL_BUSINESS_DB = {
-  "Inmobiliaria": [
-    { name: "Inmobiliaria Pergamino Propiedades", email: "contacto@pergaminoprop.com.ar" },
-    { name: "Estudio Inmobiliario Masieri", email: "ventas@masieriinmuebles.com" },
-    { name: "Siri Propiedades Pergamino", email: "info@siripropiedades.com.ar" },
-    { name: "Baliani Bienes Raíces", email: "administracion@balianiraices.com" },
-    { name: "F&B Negocios Inmobiliarios", email: "contacto@fybnegocios.com" },
-    { name: "Inmobiliaria Del Sol Pergamino", email: "delsol@pergaminoinmuebles.com.ar" },
-    { name: "Alvarez Propiedades", email: "alvarezprop@gmail.com" },
-    { name: "Gomez & Asociados Propiedades", email: "info@gomezpropiedades.com.ar" },
-    { name: "Inmobiliaria La Alborada", email: "laalborada@pergaminonet.com.ar" },
-    { name: "Rinaldi Propiedades", email: "rinaldiprop@hotmail.com" }
+  "Cafetería": [
+    {
+      "name": "Sandwichería Avenida",
+      "email": "sandwicheriaavenida@hotmail.com"
+    }
+  ],
+  "Supermercado": [
+    {
+      "name": "Muy Barato",
+      "email": "nogoya@muybaratomayorista.com.ar"
+    }
+  ],
+  "Carnicería": [
+    {
+      "name": "Porquissimo Pergamino",
+      "email": "info@porquissimo.com"
+    }
   ],
   "Ferretería": [
-    { name: "Ferretería Industrial Pergamino", email: "ventas@ferreteriaindpergamino.com" },
-    { name: "Ferretería El Cóndor", email: "elcondor@ferreterias.com.ar" },
-    { name: "Corralón de Materiales Pergamino", email: "contacto@corralonpergamino.com" },
-    { name: "Bulonera Pergamino S.H.", email: "bulonera@pergaminotools.com" },
-    { name: "Ferretería San Martín", email: "sanmartin@ferreteriasar.com" },
-    { name: "Pinturas & Herramientas Pergamino", email: "info@pergaminopinturas.com" }
+    {
+      "name": "Ferretería Illia",
+      "email": "ferreteriaillia@hotmail.com"
+    },
+    {
+      "name": "Dincor Pergamino Mayorista Ferretero",
+      "email": "dincorpergamino@gmail.com"
+    }
+  ],
+  "Corralón de Materiales": [
+    {
+      "name": "Materiales De Construcción Ferraris",
+      "email": "administracion@materialesferraris.com.ar"
+    },
+    {
+      "name": "Hierromad Hierros Y Corralón",
+      "email": "hierromad@wiscom.com.ar"
+    }
+  ],
+  "Sanitarios": [
+    {
+      "name": "Casa Foster",
+      "email": "cliente@gurusoluciones.com"
+    },
+    {
+      "name": "Lenzi :: Pergamino",
+      "email": "info@marmolerialenzi.com.ar"
+    }
+  ],
+  "Electricidad": [
+    {
+      "name": "Electro Pergamino",
+      "email": "electro@electropergamino.com"
+    },
+    {
+      "name": "Permatel",
+      "email": "contacto@permatel.com.ar"
+    },
+    {
+      "name": "Diper Electrics",
+      "email": "administracion@diperelectrics.com.ar"
+    },
+    {
+      "name": "Electro Dalle Rive",
+      "email": "cliente@gurusoluciones.com"
+    },
+    {
+      "name": "Electro Integral De Diego Gryffroy",
+      "email": "contacto@ejemplo.com"
+    },
+    {
+      "name": "Trafoper || Transformadores Pergamino",
+      "email": "info@trafoper.com.ar"
+    },
+    {
+      "name": "Talleres Galan .",
+      "email": "talleresgalan.pergamino@gmail.com"
+    },
+    {
+      "name": "Instaltec",
+      "email": "info@instaltec.com.ar"
+    },
+    {
+      "name": "Free Energy Pergamino",
+      "email": "free.energy.672@gmail.com"
+    }
+  ],
+  "Maderera": [
+    {
+      "name": "Genoud Muebles",
+      "email": "contacto@genoudmuebles.com.ar"
+    },
+    {
+      "name": "Cimaper",
+      "email": "5d1795a2db124a268f1e1bd88f503500@sentry.wixpress.com"
+    }
+  ],
+  "Perfumería": [
+    {
+      "name": "Millanel Cosmética",
+      "email": "info@millanel.com"
+    }
+  ],
+  "Peluquería": [
+    {
+      "name": "Eve",
+      "email": "cliente@gurusoluciones.com"
+    }
+  ],
+  "Spa": [
+    {
+      "name": "Howard Johnson By Wyndham Pergamino",
+      "email": "accessibility@wyndham.com"
+    }
+  ],
+  "Club": [
+    {
+      "name": "Club Atlético Douglas Haig",
+      "email": "contacto@douglashaig.com"
+    },
+    {
+      "name": "Rotary Club Pergamino",
+      "email": "secretaria@rotaryclubpergamino.org"
+    }
+  ],
+  "Cancha de Fútbol": [
+    {
+      "name": "Estadio Miguel Morales",
+      "email": "contacto@douglashaig.com"
+    },
+    {
+      "name": "Campo Recreativo Smata Pergamino",
+      "email": "pergamino@smata.com.ar"
+    }
+  ],
+  "Tienda de Ropa": [
+    {
+      "name": "La Mére",
+      "email": "guadalupecapriotti@yahoo.com.ar"
+    },
+    {
+      "name": "Romualda",
+      "email": "romualdapergamino@gmail.com"
+    },
+    {
+      "name": "Open Sports (Sucursal Pergamino)",
+      "email": "OpenSports@notificaciones.opensports.com.ar"
+    },
+    {
+      "name": "Haruka",
+      "email": "zguille100@gmail.com"
+    }
+  ],
+  "Zapatería": [
+    {
+      "name": "Alpargatas 8 De Octubre",
+      "email": "nombre@ejemplo.com"
+    }
+  ],
+  "Boutique": [
+    {
+      "name": "Helen'S Guest House Hotel",
+      "email": "helensguesthouse@gmail.com"
+    }
+  ],
+  "Lencería": [
+    {
+      "name": "Bernita Lencería",
+      "email": "tunombre@email.com"
+    }
+  ],
+  "Ropa de Bebé": [
+    {
+      "name": "Zona Bebe",
+      "email": "605a7baede844d278b89dc95ae0a9123@sentry-next.wixpress.com"
+    }
+  ],
+  "Repuestos de Autos": [
+    {
+      "name": "Biancosino Repuestos",
+      "email": "junin@biancosino.com.ar"
+    },
+    {
+      "name": "Autopartes Greco Pergamino",
+      "email": "autopartesgreco@yahoo.com"
+    }
+  ],
+  "Inmobiliaria": [
+    {
+      "name": "Seratto Propiedades",
+      "email": "info@serattopropiedades.com"
+    },
+    {
+      "name": "Dilello Propiedades",
+      "email": "info@dilellopropiedades.com"
+    },
+    {
+      "name": "Aloe & Rodriguez .",
+      "email": "info@aloerodriguez.com"
+    },
+    {
+      "name": "Re/Max Seed",
+      "email": "mlurbe@remax.com.ar"
+    },
+    {
+      "name": "Federico Paterlini",
+      "email": "inmobiliaria@federicopaterlini.com.ar"
+    },
+    {
+      "name": "Concepto  Arquitectura",
+      "email": "concepto@e-concepto.com.ar"
+    },
+    {
+      "name": "Terrile",
+      "email": "info@terrileinmobiliaria.com.ar"
+    },
+    {
+      "name": "Magrini Propiedades",
+      "email": "magrini.propiedades@gmail.com"
+    },
+    {
+      "name": "Viviana Brun  Pergamino",
+      "email": "serviciosinmobiliarios@vivianabrun.com"
+    },
+    {
+      "name": "Seratto Campos",
+      "email": "info@serattopropiedades.com"
+    }
+  ],
+  "Arquitecto": [
+    {
+      "name": "Phoenix Arquitectura Y Construcciones",
+      "email": "phoenixconstrucciones22@gmail.com"
+    },
+    {
+      "name": "Al Borde Arquitectura",
+      "email": "albordearqui@gmail.com"
+    },
+    {
+      "name": "Julian Marini Arquitectos",
+      "email": "info@julianmarini.com"
+    },
+    {
+      "name": "Rocchi",
+      "email": "rocchiestudio@gmail.com"
+    }
   ],
   "Estudio Contable": [
-    { name: "Estudio Contable Bernasconi & Asoc.", email: "estudio@bernasconicontable.com" },
-    { name: "Consultores Impositivos Pergamino", email: "impuestos@estudiopergamino.com.ar" },
-    { name: "Estudio Contable Llopis", email: "llopisestudio@gmail.com" },
-    { name: "Auditorías Contables Pergamino", email: "contacto@auditoriapg.com" }
+    {
+      "name": "Contable Alvarez & Alvarez",
+      "email": "ana@contadoralvarez.com"
+    },
+    {
+      "name": "Carnevale",
+      "email": "info@estudiocarnevale.com"
+    },
+    {
+      "name": "Copiado De Libros Contables",
+      "email": "contacto@ejemplo.com"
+    },
+    {
+      "name": "B Y B",
+      "email": "info@estudiosbyb.com.ar"
+    }
   ],
-  "Gastronomía": [
-    { name: "Restaurante El Portal Pergamino", email: "reservas@elportalrestaurante.com" },
-    { name: "Cafetería La City Pergamino", email: "lacitycafe@hotmail.com" },
-    { name: "Pizzería Nápoles Pergamino", email: "napoles@pizzeriaspergamino.com.ar" },
-    { name: "Cervecería 1882 Pergamino", email: "cerveceria1882@gmail.com" }
+  "Estudio Jurídico": [
+    {
+      "name": "Juridico Carricart",
+      "email": "605a7baede844d278b89dc95ae0a9123@sentry-next.wixpress.com"
+    },
+    {
+      "name": "Juridico Funes & Aiello",
+      "email": "estudiofunesaiello@gmail.com"
+    },
+    {
+      "name": "Apesteguia  Jurídico",
+      "email": "605a7baede844d278b89dc95ae0a9123@sentry-next.wixpress.com"
+    },
+    {
+      "name": "Jurídico Viera Cornejo",
+      "email": "contacto@estudiovieracornejo.com.ar"
+    }
+  ],
+  "Escribanía": [
+    {
+      "name": "Escribanía Ruíz Moreno",
+      "email": "escribaniaruizmoreno@hotmail.com"
+    },
+    {
+      "name": "Delegación Pergamino. Colegio De Escribanos De La Provincia De Buenos Aires",
+      "email": "colegiodeescribanos-pergamino@colescba.org.ar"
+    }
+  ],
+  "Clínica Médica": [
+    {
+      "name": "Clínica Pergamino .",
+      "email": "info@clinicapergamino.com.ar"
+    },
+    {
+      "name": "Asociacion Medica De Pergamino",
+      "email": "comunicacion@ampergamino.com.ar"
+    }
+  ],
+  "Odontólogo": [
+    {
+      "name": "Centro De Implantes Y Ortodoncia",
+      "email": "office@dentalcare.com"
+    }
+  ],
+  "Oftalmólogo": [
+    {
+      "name": "Sof Oftalmologia Pergamino",
+      "email": "info@sofpergamino.com.ar"
+    }
+  ],
+  "Veterinaria": [
+    {
+      "name": "Cyt Veterinaria",
+      "email": "info.cytveterinaria@gmail.com"
+    },
+    {
+      "name": "Campo Ciudad Agro Veterinaria",
+      "email": "HOLA@CAMPOCIUDAD.COM.AR"
+    }
+  ],
+  "Librería": [
+    {
+      "name": "Sanchez Carlos Papelera",
+      "email": "sanchez@gmail.com"
+    }
+  ],
+  "Juguetería": [
+    {
+      "name": "Cuanto Mido",
+      "email": "cliente@gurusoluciones.com"
+    }
+  ],
+  "Mueblería": [
+    {
+      "name": "Nuevas Hogar Pergamino",
+      "email": "info@nuevashogar.com.ar"
+    },
+    {
+      "name": "Bringeri Hogar",
+      "email": "info@bringerihogar.com.ar"
+    }
+  ],
+  "Colchonería": [
+    {
+      "name": "Colchones Dormicentro",
+      "email": "danielgomezeche@hotmail.com"
+    }
+  ],
+  "Decoración": [
+    {
+      "name": "S&L Decoraciones",
+      "email": "syldecoraciones@fibertel.com.ar"
+    },
+    {
+      "name": "Ve  De Diseño",
+      "email": "info@veestudio.com.ar"
+    },
+    {
+      "name": "Roquelina Interiorista",
+      "email": "roquelina.vargas@gmail.com"
+    },
+    {
+      "name": "Reina Luz Pergamino",
+      "email": "contacto@ejemplo.com"
+    },
+    {
+      "name": "On City",
+      "email": "atencionalcliente@oncity.com"
+    }
+  ],
+  "Bazar": [
+    {
+      "name": "Bazar Universo Gastronomico Pergamino",
+      "email": "tunombre@email.com"
+    },
+    {
+      "name": "Gonino Hogar",
+      "email": "goninohogar@gmail.com"
+    }
+  ],
+  "Electrónica": [
+    {
+      "name": "Naldo",
+      "email": "sucursalvenado@naldo.com.ar"
+    },
+    {
+      "name": "Factor Digital",
+      "email": "contacto@factordigital.com.ar"
+    }
+  ],
+  "Computación": [
+    {
+      "name": "F1 Computación &",
+      "email": "consultas@f1computacion.com.ar"
+    }
+  ],
+  "Venta de Celulares": [
+    {
+      "name": "Celnet Comunicaciones",
+      "email": "buncugapablog@celnet.com.ar"
+    },
+    {
+      "name": "Personal",
+      "email": "datospersonales@teco.com.ar"
+    }
+  ],
+  "Servicio Técnico": [
+    {
+      "name": "Grupo Testa Pergamino",
+      "email": "info@testaneumaticos.com"
+    }
+  ],
+  "Agencia de Viajes": [
+    {
+      "name": "Aralar Viajes",
+      "email": "correo@ejemplo.com"
+    },
+    {
+      "name": "Travel Services",
+      "email": "pergamino@travelservices.com"
+    },
+    {
+      "name": "Bohem",
+      "email": "email@example.com"
+    },
+    {
+      "name": "Santiago Ceccoli Empresa De Viajes Y Turismo",
+      "email": "email@example.com"
+    },
+    {
+      "name": "Moddy Travel Agency",
+      "email": "reservas@moddytravel.com"
+    },
+    {
+      "name": "Amé Viajes",
+      "email": "info@ameviajes.tur.ar"
+    },
+    {
+      "name": "Musafir Viajes Y Turismo",
+      "email": "correo@ejemplo.com"
+    },
+    {
+      "name": "Travel Rock Pergamino",
+      "email": "info@travelrockargentina.com.ar"
+    },
+    {
+      "name": "Kumen Viajes & Turismo",
+      "email": "kumenviajes@gmail.com"
+    },
+    {
+      "name": "Nueva Chevallier",
+      "email": "consultas@gestionbus.com.ar"
+    }
+  ],
+  "Fletes": [
+    {
+      "name": "Transporte Y Logística Calomarde",
+      "email": "logisticacalomarde@hotmail.com"
+    }
+  ],
+  "Imprenta": [
+    {
+      "name": "3D Fact",
+      "email": "info@3dfact.com"
+    },
+    {
+      "name": "Divec .",
+      "email": "divec@divec.net"
+    },
+    {
+      "name": "Imprenta Relaco- Impresiones",
+      "email": "imprenta_realco@outlook.com"
+    }
   ]
 };
 
@@ -249,6 +695,9 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // Actualizar UI del pago
   updatePaymentUI();
+
+  // Renderizar checkboxes de rubros dinámicamente
+  renderRubrosCheckboxes();
 });
 
 // Botón para aplicar Client ID real
@@ -320,7 +769,7 @@ if (excelFileInput) {
           for (const key in row) {
             const cleanKey = key.toLowerCase().trim();
             if (cleanKey.includes("email") || cleanKey === "mail" || cleanKey.includes("correo")) {
-              email = String(row[key]).trim();
+              email = decodeURIComponent(String(row[key]).trim()).replace(/\s+/g, "");
             }
             if (cleanKey.includes("nombre") || cleanKey.includes("negocio") || cleanKey.includes("business") || cleanKey.includes("empresa")) {
               name = String(row[key]).trim();
@@ -475,27 +924,92 @@ btnSubmitCustomAccount.addEventListener("click", () => {
   loginSuccess(name, email);
 });
 
-// Gestión de Checkboxes de Rubros
+// Gestión de Checkboxes de Rubros (Dinámicos)
 const rubroAllCheckbox = document.getElementById("rubroAll");
-const rubroCheckboxes = document.querySelectorAll(".rubro-check");
+let rubroCheckboxes = [];
 
-rubroAllCheckbox.addEventListener("change", () => {
-  const isChecked = rubroAllCheckbox.checked;
-  rubroCheckboxes.forEach(cb => {
-    cb.checked = isChecked;
-  });
-});
-
-rubroCheckboxes.forEach(cb => {
-  cb.addEventListener("change", () => {
-    if (!cb.checked) {
-      rubroAllCheckbox.checked = false;
-    } else {
-      const allChecked = Array.from(rubroCheckboxes).every(c => c.checked);
-      rubroAllCheckbox.checked = allChecked;
+function renderRubrosCheckboxes() {
+  const container = document.getElementById("rubroCheckboxes");
+  if (!container) return;
+  
+  // Limpiar el contenedor
+  container.innerHTML = "";
+  
+  // Obtener y ordenar los rubros de la base de datos de forma alfabética
+  const keys = Object.keys(LOCAL_BUSINESS_DB).sort((a, b) => a.localeCompare(b));
+  
+  // Rubros que estarán marcados por defecto para guiar al usuario
+  const defaultChecked = ["Inmobiliaria", "Ferretería", "Estudio Contable", "Estudio Jurídico", "Cafetería", "Supermercado"];
+  
+  keys.forEach((rubro, index) => {
+    const count = LOCAL_BUSINESS_DB[rubro].length;
+    const checkboxId = `rubro_dyn_${index}`;
+    
+    // Crear wrapper
+    const wrapper = document.createElement("div");
+    wrapper.style.display = "flex";
+    wrapper.style.alignItems = "center";
+    wrapper.style.gap = "0.5rem";
+    
+    // Crear checkbox
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.className = "rubro-check";
+    checkbox.id = checkboxId;
+    checkbox.value = rubro;
+    checkbox.style.width = "16px";
+    checkbox.style.height = "16px";
+    checkbox.style.cursor = "pointer";
+    
+    // Determinar si debe estar marcado por defecto
+    const shouldCheck = defaultChecked.some(def => rubro.toLowerCase().includes(def.toLowerCase()));
+    if (shouldCheck) {
+      checkbox.checked = true;
     }
+    
+    // Crear etiqueta con el contador de empresas
+    const label = document.createElement("label");
+    label.htmlFor = checkboxId;
+    label.style.marginBottom = "0";
+    label.style.cursor = "pointer";
+    label.innerText = `${rubro} (${count})`;
+    
+    wrapper.appendChild(checkbox);
+    wrapper.appendChild(label);
+    container.appendChild(wrapper);
   });
-});
+  
+  // Actualizar referencias y registrar manejadores de eventos
+  updateRubroListeners();
+}
+
+function updateRubroListeners() {
+  rubroCheckboxes = document.querySelectorAll(".rubro-check");
+  
+  rubroCheckboxes.forEach(cb => {
+    cb.addEventListener("change", () => {
+      if (!cb.checked) {
+        rubroAllCheckbox.checked = false;
+      } else {
+        const allChecked = Array.from(rubroCheckboxes).every(c => c.checked);
+        rubroAllCheckbox.checked = allChecked;
+      }
+    });
+  });
+  
+  // Actualizar estado del checkbox "Todos" inicial
+  const allChecked = rubroCheckboxes.length > 0 && Array.from(rubroCheckboxes).every(c => c.checked);
+  rubroAllCheckbox.checked = allChecked;
+}
+
+if (rubroAllCheckbox) {
+  rubroAllCheckbox.addEventListener("change", () => {
+    const isChecked = rubroAllCheckbox.checked;
+    rubroCheckboxes.forEach(cb => {
+      cb.checked = isChecked;
+    });
+  });
+}
 
 // Mostrar/ocultar el cartel de advertencia de spam según la cantidad de envíos elegida
 function updateSpamWarning() {
