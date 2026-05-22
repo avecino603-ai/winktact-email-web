@@ -225,16 +225,21 @@ window.addEventListener("DOMContentLoaded", () => {
     googleSdkLoaded();
   }
 
-  // Verificar si ya tiene acceso ilimitado pagado anteriormente en esta máquina
-  const hasPaid = localStorage.getItem("winktact_paid") === "true";
-  if (hasPaid) {
-    checkPaymentConfirmed.checked = true;
-    paymentAlreadyActiveBox.style.display = "flex";
-    paymentIntroText.style.display = "none";
-    mpBoxElement.style.display = "none";
-    mpButtonWrapper.style.display = "none";
-    document.getElementById("mpConfirmContainer").style.display = "none";
+  // Detección de retorno de Mercado Pago en la URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const paymentId = urlParams.get("payment_id") || urlParams.get("collection_id");
+  const paymentStatus = urlParams.get("status") || urlParams.get("collection_status");
+
+  if (paymentId && paymentStatus === "approved") {
+    localStorage.setItem("winktact_payment_id", paymentId);
+    localStorage.setItem("winktact_paid", "true");
+    appendLog(`[MERCADO PAGO] Pago aprobado detectado en URL (ID: ${paymentId}). Licencia activada.`, "success");
+    // Limpiar URL
+    window.history.replaceState({}, document.title, window.location.pathname);
   }
+
+  // Actualizar UI del pago
+  updatePaymentUI();
 });
 
 // Botón para aplicar Client ID real
@@ -402,29 +407,79 @@ Agradeciendo de antemano su tiempo y consideración, los saluda atentamente,
 const btnMercadoPagoReal = document.getElementById("btnMercadoPagoReal");
 const checkPaymentConfirmed = document.getElementById("checkPaymentConfirmed");
 const mpConfirmContainer = document.getElementById("mpConfirmContainer");
+const btnValidateManualPayment = document.getElementById("btnValidateManualPayment");
+const manualPaymentIdInput = document.getElementById("manualPaymentId");
+const manualPaymentError = document.getElementById("manualPaymentError");
 
-// Mostrar confirmación al pulsar pagar y registrar el pago en localStorage
-btnMercadoPagoReal.addEventListener("click", () => {
-  mpConfirmContainer.style.display = "block";
-  appendLog(`[MERCADO PAGO] Abriendo enlace de pago de Mercado Pago (https://mpago.la/13pCrpN) en una nueva pestaña...`, "info");
-  
-  // Registrar el inicio de la transacción en localStorage
-  localStorage.setItem("winktact_paid", "true");
-});
+// Función para actualizar los elementos visuales de acuerdo al estado del pago
+function updatePaymentUI() {
+  const hasPaid = localStorage.getItem("winktact_paid") === "true";
+  const savedPaymentId = localStorage.getItem("winktact_payment_id");
+  const paymentStatusBadge = document.getElementById("paymentStatusBadge");
 
-// Habilitar/deshabilitar botón siguiente según confirmación de pago y persistir
-checkPaymentConfirmed.addEventListener("change", () => {
-  if (currentStep === 3) {
-    btnNext.disabled = !checkPaymentConfirmed.checked;
-  }
-  if (checkPaymentConfirmed.checked) {
-    localStorage.setItem("winktact_paid", "true");
+  if (hasPaid) {
+    checkPaymentConfirmed.checked = true;
     paymentAlreadyActiveBox.style.display = "flex";
     paymentIntroText.style.display = "none";
     mpBoxElement.style.display = "none";
     mpButtonWrapper.style.display = "none";
-    document.getElementById("mpConfirmContainer").style.display = "none";
-    appendLog("[SISTEMA] Licencia de Acceso Ilimitado registrada localmente.", "success");
+    mpConfirmContainer.style.display = "none";
+  } else {
+    checkPaymentConfirmed.checked = false;
+    paymentAlreadyActiveBox.style.display = "none";
+    paymentIntroText.style.display = "block";
+    mpBoxElement.style.display = "flex";
+    mpButtonWrapper.style.display = "block";
+    mpConfirmContainer.style.display = "block";
+
+    if (savedPaymentId) {
+      paymentStatusBadge.innerText = `⏳ ID Registrado: ${savedPaymentId} (Se validará al iniciar envío)`;
+      paymentStatusBadge.style.background = "rgba(245, 158, 11, 0.1)";
+      paymentStatusBadge.style.color = "#fbbf24";
+      paymentStatusBadge.style.borderColor = "rgba(245, 158, 11, 0.2)";
+      checkPaymentConfirmed.checked = true; // Permitir avanzar al Paso 4
+    } else {
+      paymentStatusBadge.innerText = "🔒 Sin Licencia (Pago pendiente)";
+      paymentStatusBadge.style.background = "rgba(239, 68, 68, 0.1)";
+      paymentStatusBadge.style.color = "var(--danger-color)";
+      paymentStatusBadge.style.borderColor = "rgba(239, 68, 68, 0.2)";
+    }
+  }
+
+  // Actualizar habilitación del botón siguiente en el paso 3
+  if (currentStep === 3) {
+    btnNext.disabled = !checkPaymentConfirmed.checked;
+  }
+}
+
+// Abrir link de pago e indicar al usuario
+btnMercadoPagoReal.addEventListener("click", () => {
+  appendLog(`[MERCADO PAGO] Abriendo enlace de pago de Mercado Pago (https://mpago.la/13pCrpN)...`, "info");
+});
+
+// Manejo del botón de validación manual
+btnValidateManualPayment.addEventListener("click", () => {
+  const idValue = manualPaymentIdInput.value.trim();
+  // Validar formato (solo números, entre 8 y 15 caracteres)
+  const regex = /^\d{8,15}$/;
+  if (!regex.test(idValue)) {
+    manualPaymentError.innerText = "El ID de pago debe contener entre 8 y 15 dígitos numéricos.";
+    manualPaymentError.style.display = "block";
+    return;
+  }
+
+  manualPaymentError.style.display = "none";
+  localStorage.setItem("winktact_payment_id", idValue);
+  appendLog(`[MERCADO PAGO] ID de pago ingresado manualmente: ${idValue}. Guardando para verificación.`, "success");
+  
+  // Actualizar UI
+  updatePaymentUI();
+});
+
+// Habilitar/deshabilitar botón siguiente según confirmación de pago
+checkPaymentConfirmed.addEventListener("change", () => {
+  if (currentStep === 3) {
+    btnNext.disabled = !checkPaymentConfirmed.checked;
   }
 });
 
@@ -738,6 +793,7 @@ async function startCampaign() {
       recipientEmail: business.email,
       subject: parsedSubject,
       body: parsedBody,
+      paymentId: localStorage.getItem("winktact_payment_id"),
       cvFile: {
         name: selectedFile.name,
         data: fileBase64
@@ -762,16 +818,20 @@ async function startCampaign() {
         appendLog(`[SISTEMA] ¡Modo de demostración activado automáticamente! Continuando con la simulación...`, "info");
         runSimulationStep(business, parsedSubject);
       } else if (!response.ok) {
-        // Error de backend real (ej. Credenciales incorrectas)
+        // Error de backend real (ej. Credenciales incorrectas o pago inválido)
         const data = await response.json().catch(() => ({}));
         appendLog(`[FALLO SMTP] ${data.error || "Error en el servidor de envío"}`, "danger");
-        appendLog(`[SISTEMA] Campaña pausada por seguridad del remitente para evitar bloqueos. Verifica tu contraseña de aplicación SMTP e inténtalo de nuevo.`, "warning");
+        appendLog(`[SISTEMA] Campaña pausada por seguridad del remitente para evitar bloqueos. Verifica tu contraseña de aplicación SMTP y tu pago e inténtalo de nuevo.`, "warning");
         isSending = false;
         btnNewCampaign.style.display = "block";
       } else {
         // Éxito real!
         appendLog(`[CONEXIÓN] SMTP autorizada para ${userEmailInput.value}`, "success");
         appendLog(`[OK] Correo enviado de forma real a ${business.email}`, "success");
+        
+        // Registrar que el pago ha sido verificado con éxito en el servidor
+        localStorage.setItem("winktact_paid", "true");
+        
         completeStep();
       }
 

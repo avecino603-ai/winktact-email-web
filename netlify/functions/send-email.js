@@ -28,6 +28,7 @@ exports.handler = async (event, context) => {
       recipientEmail, 
       subject, 
       body: emailBody, 
+      paymentId,
       cvFile 
     } = body;
 
@@ -38,6 +39,56 @@ exports.handler = async (event, context) => {
         headers,
         body: JSON.stringify({ error: "Faltan datos obligatorios para el envío (correo emisor, contraseña SMTP, correo destinatario, mensaje o archivo PDF)." })
       };
+    }
+
+    // Verificar pago con Mercado Pago si el token está configurado
+    if (process.env.MP_ACCESS_TOKEN) {
+      if (!paymentId) {
+        return {
+          statusCode: 402,
+          headers,
+          body: JSON.stringify({ error: "Verificación de pago requerida. Por favor, ingresa tu ID de pago." })
+        };
+      }
+
+      try {
+        const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+          headers: {
+            "Authorization": `Bearer ${process.env.MP_ACCESS_TOKEN}`
+          }
+        });
+
+        if (!mpResponse.ok) {
+          const mpErrorData = await mpResponse.json().catch(() => ({}));
+          console.error("Error en API de Mercado Pago:", mpErrorData);
+          return {
+            statusCode: 402,
+            headers,
+            body: JSON.stringify({ error: "El ID de pago ingresado no es válido o no existe en Mercado Pago." })
+          };
+        }
+
+        const mpPaymentData = await mpResponse.json();
+        if (mpPaymentData.status !== "approved") {
+          return {
+            statusCode: 402,
+            headers,
+            body: JSON.stringify({ error: `El pago ingresado no se encuentra aprobado (Estado actual: ${mpPaymentData.status}).` })
+          };
+        }
+
+        console.log(`[PAGO CONFIRMADO] Transacción Mercado Pago aprobada para ID: ${paymentId}`);
+
+      } catch (mpErr) {
+        console.error("Error al conectar con la API de Mercado Pago:", mpErr);
+        return {
+          statusCode: 500,
+          headers,
+          body: JSON.stringify({ error: "Error interno al verificar el pago con Mercado Pago. Inténtalo de nuevo más tarde." })
+        };
+      }
+    } else {
+      console.warn(`[PAGO ADVERTENCIA] MP_ACCESS_TOKEN no configurado en Netlify. Omitiendo verificación del ID: ${paymentId}`);
     }
 
     // Configurar el transportador SMTP para Gmail
