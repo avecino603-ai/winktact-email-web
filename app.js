@@ -1044,13 +1044,25 @@ const manualPaymentError = document.getElementById("manualPaymentError");
 
 // Función para actualizar los elementos visuales de acuerdo al estado del pago
 function updatePaymentUI() {
-  const hasPaid = localStorage.getItem("winktact_paid") === "true";
   const savedPaymentId = localStorage.getItem("winktact_payment_id");
+  const hasPaid = localStorage.getItem("winktact_paid") === "true" || savedPaymentId === "999999999";
   const paymentStatusBadge = document.getElementById("paymentStatusBadge");
 
   if (hasPaid) {
     checkPaymentConfirmed.checked = true;
     paymentAlreadyActiveBox.style.display = "flex";
+    
+    // Personalizar el mensaje si es el ID de bypass especial
+    const textElement = paymentAlreadyActiveBox.querySelector("p");
+    const titleElement = paymentAlreadyActiveBox.querySelector("h4");
+    if (savedPaymentId === "999999999") {
+      if (textElement) textElement.innerText = "Modo de desarrollo activo mediante ID de prueba. Tienes acceso completo para configurar y enviar los currículums de prueba y reales.";
+      if (titleElement) titleElement.innerText = "🛠️ Licencia de Desarrollador Activa";
+    } else {
+      if (textElement) textElement.innerText = "Detectamos que ya has realizado el pago único de $50.000 en esta máquina. Tienes acceso completo para configurar y enviar los currículums que desees.";
+      if (titleElement) titleElement.innerText = "¡Acceso Ilimitado Activo!";
+    }
+
     paymentIntroText.style.display = "none";
     mpBoxElement.style.display = "none";
     mpButtonWrapper.style.display = "none";
