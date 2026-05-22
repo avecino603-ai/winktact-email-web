@@ -51,41 +51,46 @@ exports.handler = async (event, context) => {
         };
       }
 
-      try {
-        const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
-          headers: {
-            "Authorization": `Bearer ${process.env.MP_ACCESS_TOKEN}`
+      // Permitir un ID especial de bypass ("999999999") para realizar pruebas de envío real sin pagar
+      if (paymentId === "999999999") {
+        console.log(`[PAGO BYPASS PRUEBA] Simulación de pago aprobada para ID de prueba: ${paymentId}`);
+      } else {
+        try {
+          const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+            headers: {
+              "Authorization": `Bearer ${process.env.MP_ACCESS_TOKEN}`
+            }
+          });
+
+          if (!mpResponse.ok) {
+            const mpErrorData = await mpResponse.json().catch(() => ({}));
+            console.error("Error en API de Mercado Pago:", mpErrorData);
+            return {
+              statusCode: 402,
+              headers,
+              body: JSON.stringify({ error: "El ID de pago ingresado no es válido o no existe en Mercado Pago." })
+            };
           }
-        });
 
-        if (!mpResponse.ok) {
-          const mpErrorData = await mpResponse.json().catch(() => ({}));
-          console.error("Error en API de Mercado Pago:", mpErrorData);
+          const mpPaymentData = await mpResponse.json();
+          if (mpPaymentData.status !== "approved") {
+            return {
+              statusCode: 402,
+              headers,
+              body: JSON.stringify({ error: `El pago ingresado no se encuentra aprobado (Estado actual: ${mpPaymentData.status}).` })
+            };
+          }
+
+          console.log(`[PAGO CONFIRMADO] Transacción Mercado Pago aprobada para ID: ${paymentId}`);
+
+        } catch (mpErr) {
+          console.error("Error al conectar con la API de Mercado Pago:", mpErr);
           return {
-            statusCode: 402,
+            statusCode: 500,
             headers,
-            body: JSON.stringify({ error: "El ID de pago ingresado no es válido o no existe en Mercado Pago." })
+            body: JSON.stringify({ error: "Error interno al verificar el pago con Mercado Pago. Inténtalo de nuevo más tarde." })
           };
         }
-
-        const mpPaymentData = await mpResponse.json();
-        if (mpPaymentData.status !== "approved") {
-          return {
-            statusCode: 402,
-            headers,
-            body: JSON.stringify({ error: `El pago ingresado no se encuentra aprobado (Estado actual: ${mpPaymentData.status}).` })
-          };
-        }
-
-        console.log(`[PAGO CONFIRMADO] Transacción Mercado Pago aprobada para ID: ${paymentId}`);
-
-      } catch (mpErr) {
-        console.error("Error al conectar con la API de Mercado Pago:", mpErr);
-        return {
-          statusCode: 500,
-          headers,
-          body: JSON.stringify({ error: "Error interno al verificar el pago con Mercado Pago. Inténtalo de nuevo más tarde." })
-        };
       }
     } else {
       console.warn(`[PAGO ADVERTENCIA] MP_ACCESS_TOKEN no configurado en Netlify. Omitiendo verificación del ID: ${paymentId}`);
