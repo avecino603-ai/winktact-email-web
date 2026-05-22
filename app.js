@@ -476,6 +476,18 @@ btnValidateManualPayment.addEventListener("click", () => {
   updatePaymentUI();
 });
 
+// Botón para restablecer el estado de pago y validar otro ID
+const btnResetPayment = document.getElementById("btnResetPayment");
+if (btnResetPayment) {
+  btnResetPayment.addEventListener("click", () => {
+    localStorage.removeItem("winktact_paid");
+    localStorage.removeItem("winktact_payment_id");
+    manualPaymentIdInput.value = "";
+    updatePaymentUI();
+    appendLog("[SISTEMA] Licencia y ID de pago restablecidos. Ya puedes ingresar un nuevo ID de pago.", "info");
+  });
+}
+
 // Habilitar/deshabilitar botón siguiente según confirmación de pago
 checkPaymentConfirmed.addEventListener("change", () => {
   if (currentStep === 3) {
