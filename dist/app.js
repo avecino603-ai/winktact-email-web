@@ -941,10 +941,21 @@ let excelBusinesses = [];
 // Elementos de importación de Excel / Origen de datos
 const sourceSimulated = document.getElementById("sourceSimulated");
 const sourceExcel = document.getElementById("sourceExcel");
+const sourceScraping = document.getElementById("sourceScraping");
 const excelUploadContainer = document.getElementById("excelUploadContainer");
 const simulatedContainer = document.getElementById("simulatedContainer");
+const scrapingContainer = document.getElementById("scrapingContainer");
 const excelFileInput = document.getElementById("excelFile");
 const excelSummaryText = document.getElementById("excelSummaryText");
+const scrapingRubroInput = document.getElementById("scrapingRubro");
+const scrapingCityInput = document.getElementById("scrapingCity");
+const btnStartScraping = document.getElementById("btnStartScraping");
+const scrapingConsoleBox = document.getElementById("scrapingConsoleBox");
+const scrapingSummaryText = document.getElementById("scrapingSummaryText");
+
+// Estado para Scraping
+let scrapedBusinesses = [];
+let isScraping = false;
 
 // Inicialización de variables
 const userNameInput = document.getElementById("userName");
@@ -1203,19 +1214,26 @@ btnResetClientId.addEventListener("click", () => {
   appendLog("[SISTEMA] Restablecido al modo de inicio de sesión simulado.", "info");
 });
 
-// Lógica de alternancia del Origen de Datos (Simulado vs Excel)
-if (sourceSimulated && sourceExcel) {
+// Lógica de alternancia del Origen de Datos (Simulado vs Excel vs Scraping)
+if (sourceSimulated && sourceExcel && sourceScraping) {
   const toggleSource = () => {
     if (sourceSimulated.checked) {
       if (simulatedContainer) simulatedContainer.style.display = "block";
       if (excelUploadContainer) excelUploadContainer.style.display = "none";
-    } else {
+      if (scrapingContainer) scrapingContainer.style.display = "none";
+    } else if (sourceExcel.checked) {
       if (simulatedContainer) simulatedContainer.style.display = "none";
       if (excelUploadContainer) excelUploadContainer.style.display = "block";
+      if (scrapingContainer) scrapingContainer.style.display = "none";
+    } else if (sourceScraping.checked) {
+      if (simulatedContainer) simulatedContainer.style.display = "none";
+      if (excelUploadContainer) excelUploadContainer.style.display = "none";
+      if (scrapingContainer) scrapingContainer.style.display = "block";
     }
   };
   sourceSimulated.addEventListener("change", toggleSource);
   sourceExcel.addEventListener("change", toggleSource);
+  sourceScraping.addEventListener("change", toggleSource);
 }
 
 // Lógica de importación de Excel con SheetJS
@@ -1299,6 +1317,119 @@ if (excelFileInput) {
   });
 }
 
+// Lógica de Extracción de Prospectos en Vivo (Scraping)
+if (btnStartScraping) {
+  btnStartScraping.addEventListener("click", async () => {
+    if (isScraping) return;
+
+    const rubro = scrapingRubroInput.value.trim();
+    const city = scrapingCityInput.value.trim();
+
+    if (!rubro || !city) {
+      alert("Por favor, ingresa tanto el rubro como la ciudad para realizar la búsqueda.");
+      return;
+    }
+
+    isScraping = true;
+    btnStartScraping.disabled = true;
+    btnStartScraping.innerText = "⏳ Extrayendo...";
+    
+    // Deshabilitar navegación del wizard temporalmente
+    btnNext.disabled = true;
+    btnPrev.disabled = true;
+
+    // Resetear consola de scraping
+    scrapingConsoleBox.innerHTML = '<div style="color: #a855f7;">[BOT] Iniciando conexión con el extractor...</div>';
+    scrapingConsoleBox.style.display = "block";
+    scrapingSummaryText.style.display = "none";
+    scrapedBusinesses = [];
+
+    let logInterval = null;
+
+    try {
+      const response = await fetch("/.netlify/functions/search-prospects", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ city, rubro })
+      });
+
+      if (!response.ok) {
+        throw new Error("El servidor de extracción retornó un error.");
+      }
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || "Fallo en la extracción.");
+      }
+
+      // Mostrar los logs secuencialmente para simular el tiempo real de scraping
+      let logIndex = 0;
+      logInterval = setInterval(() => {
+        if (logIndex < data.logs.length) {
+          const logLine = document.createElement("div");
+          const text = data.logs[logIndex];
+          logLine.innerText = text;
+          
+          if (text.includes("[✓")) {
+            logLine.style.color = "var(--success-color)";
+          } else if (text.includes("[ERROR") || text.includes("[✗]")) {
+            logLine.style.color = "var(--danger-color)";
+          } else {
+            logLine.style.color = "#c084fc";
+          }
+          
+          scrapingConsoleBox.appendChild(logLine);
+          scrapingConsoleBox.scrollTop = scrapingConsoleBox.scrollHeight;
+          logIndex++;
+        } else {
+          clearInterval(logInterval);
+          
+          // Guardar prospectos extraídos
+          scrapedBusinesses = data.prospects;
+          
+          // Mostrar sumario final
+          scrapingSummaryText.innerText = `✓ Se completó la extracción. ${scrapedBusinesses.length} prospectos listos.`;
+          scrapingSummaryText.style.display = "block";
+          scrapingSummaryText.style.background = "rgba(168, 85, 247, 0.1)";
+          scrapingSummaryText.style.color = "#c084fc";
+          scrapingSummaryText.style.borderColor = "rgba(168, 85, 247, 0.2)";
+          
+          appendLog(`[BOT] Extracción finalizada para ${rubro} en ${city}: ${scrapedBusinesses.length} contactos.`, "success");
+
+          // Reactivar botones
+          isScraping = false;
+          btnStartScraping.disabled = false;
+          btnStartScraping.innerText = "🔍 Iniciar Extracción de Prospectos";
+          btnPrev.disabled = false;
+          btnNext.disabled = false; // Permitir avanzar
+        }
+      }, 400); // 400ms por línea de log para una linda transición visual
+
+    } catch (err) {
+      if (logInterval) clearInterval(logInterval);
+      const errLine = document.createElement("div");
+      errLine.innerText = `[ERROR CRÍTICO] ${err.message}`;
+      errLine.style.color = "var(--danger-color)";
+      scrapingConsoleBox.appendChild(errLine);
+      
+      scrapingSummaryText.innerText = `✗ Error en la extracción: ${err.message}`;
+      scrapingSummaryText.style.display = "block";
+      scrapingSummaryText.style.background = "rgba(239, 68, 68, 0.1)";
+      scrapingSummaryText.style.color = "var(--danger-color)";
+      scrapingSummaryText.style.borderColor = "rgba(239, 68, 68, 0.2)";
+
+      isScraping = false;
+      btnStartScraping.disabled = false;
+      btnStartScraping.innerText = "🔍 Iniciar Extracción de Prospectos";
+      btnPrev.disabled = false;
+      btnNext.disabled = true; // No permitir avanzar si falló y no hay nada
+    }
+  });
+}
+
 // Botón para Cerrar Sesión
 btnLogout.addEventListener("click", () => {
   sessionStorage.removeItem("winktact_username");
@@ -1314,16 +1445,28 @@ btnLogout.addEventListener("click", () => {
   fileNameDisplay.style.display = "none";
   fileNameDisplay.innerText = "";
 
-  // Limpiar estado e inputs de Excel
+  // Limpiar estado e inputs de Excel y Scraping
   excelBusinesses = [];
+  scrapedBusinesses = [];
   if (excelFileInput) excelFileInput.value = "";
+  if (scrapingRubroInput) scrapingRubroInput.value = "";
+  if (scrapingCityInput) scrapingCityInput.value = "";
   if (excelSummaryText) {
     excelSummaryText.style.display = "none";
     excelSummaryText.innerText = "";
   }
+  if (scrapingSummaryText) {
+    scrapingSummaryText.style.display = "none";
+    scrapingSummaryText.innerText = "";
+  }
+  if (scrapingConsoleBox) {
+    scrapingConsoleBox.style.display = "none";
+    scrapingConsoleBox.innerHTML = '<div style="color: #6b7280;">Esperando inicio de búsqueda...</div>';
+  }
   if (sourceSimulated) sourceSimulated.checked = true;
   if (simulatedContainer) simulatedContainer.style.display = "block";
   if (excelUploadContainer) excelUploadContainer.style.display = "none";
+  if (scrapingContainer) scrapingContainer.style.display = "none";
 
   
   // Resetear wizard a Paso 1 y deshabilitar botones
@@ -1684,9 +1827,15 @@ function validateStep(step) {
     }
   } else if (step === 2) {
     const isExcel = sourceExcel && sourceExcel.checked;
+    const isScrapingSource = sourceScraping && sourceScraping.checked;
     if (isExcel) {
       if (excelBusinesses.length === 0) {
         alert("Por favor, selecciona y carga un archivo Excel de Winktact válido con correos reales antes de continuar.");
+        return false;
+      }
+    } else if (isScrapingSource) {
+      if (scrapedBusinesses.length === 0) {
+        alert("Por favor, inicia la extracción en vivo de prospectos y asegúrate de conseguir al menos uno válido antes de continuar.");
         return false;
       }
     } else {
@@ -1820,8 +1969,13 @@ async function startCampaign() {
   isSending = true;
 
   const isExcel = sourceExcel && sourceExcel.checked;
+  const isScrapingSource = sourceScraping && sourceScraping.checked;
   const rubros = getSelectedRubros();
-  const city = document.getElementById("businessCity").value.trim() || "Pergamino";
+  
+  // Si es scraping, la ciudad se lee de scrapingCity, sino del input de ciudad del paso 2
+  const city = isScrapingSource 
+    ? (scrapingCityInput.value.trim() || "Pergamino")
+    : (document.getElementById("businessCity").value.trim() || "Pergamino");
   
   let businesses = [];
 
@@ -1834,6 +1988,17 @@ async function startCampaign() {
     }));
     
     appendLog(`[SISTEMA] Iniciando campaña con base de datos real importada desde Excel (${businesses.length} contactos)...`, "info");
+  } else if (isScrapingSource) {
+    // Clonamos la lista de prospectos extraídos por scraping
+    businesses = scrapedBusinesses.map(b => ({
+      name: b.name,
+      email: b.email,
+      rubro: b.rubro || "Scraping",
+      instagram: b.instagram || null,
+      website: b.website || null
+    }));
+    
+    appendLog(`[SISTEMA] Iniciando campaña con base de datos extraída en vivo desde Google Maps (${businesses.length} contactos)...`, "info");
   } else {
     // Agrupar empresas de todos los rubros seleccionados
     let rawBusinesses = [];
@@ -2100,14 +2265,19 @@ function showNextInstagramBusiness() {
 
   const business = instagramCampaignBusinesses[currentInstagramCampaignIndex];
   
-  // Normalizar nombre de la empresa para el handle de Instagram (quitar espacios, acentos, y caracteres especiales)
-  const cleanHandle = business.name
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // remover acentos
-    .replace(/[^a-z0-9]/g, ""); // remover no alfanuméricos
-  
-  const handle = `@${cleanHandle}`;
+  let handle = "";
+  if (business.instagram) {
+    handle = `@${business.instagram}`;
+  } else {
+    // Normalizar nombre de la empresa para el handle de Instagram (quitar espacios, acentos, y caracteres especiales)
+    const cleanHandle = business.name
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // remover acentos
+      .replace(/[^a-z0-9]/g, ""); // remover no alfanuméricos
+    
+    handle = `@${cleanHandle}`;
+  }
 
   // Actualizar elementos de la interfaz
   if (igCurrentBusinessName) igCurrentBusinessName.innerText = business.name;
@@ -2152,14 +2322,20 @@ if (btnIgAction) {
       }
     });
 
-    // Normalizar nombre de la empresa para URL de Instagram
-    const cleanName = business.name
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]/g, "");
-
-    const igUrl = `https://www.instagram.com/${cleanName}/`;
+    // Obtener la URL de Instagram (si ya fue extraída por scraping, o predecirla si no)
+    let igUrl = "";
+    if (business.instagram) {
+      igUrl = `https://www.instagram.com/${business.instagram}/`;
+    } else {
+      const cleanName = business.name
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]/g, "");
+      
+      igUrl = `https://www.instagram.com/${cleanName}/`;
+    }
+    
     window.open(igUrl, "_blank");
 
     appendLog(`[📸 INSTAGRAM] Abriendo perfil de ${business.name}: ${igUrl}`, "success");

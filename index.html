@@ -203,14 +203,18 @@
       <!-- Selector de Origen de Datos -->
       <div class="form-group">
         <label>Origen de los Contactos</label>
-        <div style="display: flex; gap: 1.5rem; margin-bottom: 1rem; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 0.85rem 1.25rem;">
-          <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: normal; margin-bottom: 0;">
+        <div style="display: flex; gap: 1rem; margin-bottom: 1rem; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 0.85rem 1.25rem; flex-wrap: wrap;">
+          <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: normal; margin-bottom: 0; color: var(--text-primary);">
             <input type="radio" name="dataSource" id="sourceSimulated" value="simulated" checked style="width: 16px; height: 16px; cursor: pointer;">
             Base de datos de Pergamino (Precargada)
           </label>
-          <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: normal; margin-bottom: 0;">
+          <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: normal; margin-bottom: 0; color: var(--text-primary);">
             <input type="radio" name="dataSource" id="sourceExcel" value="excel" style="width: 16px; height: 16px; cursor: pointer;">
             Importar desde Excel (Envíos Reales)
+          </label>
+          <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: normal; margin-bottom: 0; color: var(--text-primary);">
+            <input type="radio" name="dataSource" id="sourceScraping" value="scraping" style="width: 16px; height: 16px; cursor: pointer;">
+            🔍 Extracción en Vivo (Google Maps + Scraping)
           </label>
         </div>
       </div>
@@ -223,6 +227,33 @@
           Sube el archivo Excel exportado desde la aplicación de escritorio de Winktact. Debe tener la columna <strong>Email</strong> con correos reales y <strong>Nombre del Negocio</strong>.
         </small>
         <div id="excelSummaryText" style="margin-top: 0.75rem; padding: 0.5rem; border-radius: 6px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); color: var(--success-color); font-weight: 600; font-size: 0.85rem; text-align: center; display: none;"></div>
+      </div>
+
+      <!-- Contenedor de Extracción en Vivo (Scraping, oculto por defecto) -->
+      <div class="form-group" id="scrapingContainer" style="display: none; background: rgba(168, 85, 247, 0.05); border: 2px dashed rgba(168, 85, 247, 0.3); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem;">
+        <label style="font-weight: 700; color: var(--accent-color); display: block; margin-bottom: 0.75rem;">🔍 Parámetros de Extracción en Vivo</label>
+        
+        <div style="display: flex; gap: 0.75rem; margin-bottom: 0.75rem; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 160px;">
+            <label for="scrapingRubro" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.25rem; display: block;">Rubro Comercial</label>
+            <input type="text" id="scrapingRubro" placeholder="Ej: Gimnasio, Heladería, Fábrica" style="width: 100%; padding: 0.75rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; font-size: 0.9rem; outline: none;">
+          </div>
+          <div style="flex: 1; min-width: 160px;">
+            <label for="scrapingCity" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.25rem; display: block;">Ciudad</label>
+            <input type="text" id="scrapingCity" placeholder="Ej: Pergamino, Rosario" style="width: 100%; padding: 0.75rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; font-size: 0.9rem; outline: none;">
+          </div>
+        </div>
+
+        <button type="button" class="btn btn-primary" id="btnStartScraping" style="width: 100%; margin: 0.5rem 0; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.25); background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); font-weight: bold; border-radius: 8px; padding: 0.75rem;">
+          🔍 Iniciar Extracción de Prospectos
+        </button>
+
+        <!-- Consola de Logs del Scraping en Vivo -->
+        <div id="scrapingConsoleBox" style="display: none; background: #000; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; font-family: monospace; font-size: 0.8rem; padding: 0.75rem; max-height: 180px; overflow-y: auto; text-align: left; margin-top: 0.75rem; color: #c084fc; line-height: 1.4;">
+          <div style="color: #6b7280;">Esperando inicio de búsqueda...</div>
+        </div>
+
+        <div id="scrapingSummaryText" style="margin-top: 0.75rem; padding: 0.5rem; border-radius: 6px; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.2); color: #c084fc; font-weight: 600; font-size: 0.85rem; text-align: center; display: none;"></div>
       </div>
 
       <!-- Contenedor original de simulación -->
