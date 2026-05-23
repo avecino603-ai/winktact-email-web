@@ -993,6 +993,24 @@ const btnLogout = document.getElementById("btnLogout");
 
 let isGoogleSdkLoaded = false;
 
+// Elementos del Canal de Envío
+const channelEmail = document.getElementById("channelEmail");
+const channelInstagram = document.getElementById("channelInstagram");
+const smtpCredentialsContainer = document.getElementById("smtpCredentialsContainer");
+const instagramCVNotice = document.getElementById("instagramCVNotice");
+
+// Elementos de la consola de Instagram
+const instagramManualContainer = document.getElementById("instagramManualContainer");
+const igCurrentBusinessName = document.getElementById("igCurrentBusinessName");
+const igCurrentHandle = document.getElementById("igCurrentHandle");
+const btnIgAction = document.getElementById("btnIgAction");
+const btnIgSkip = document.getElementById("btnIgSkip");
+const btnIgPause = document.getElementById("btnIgPause");
+
+// Estado para Instagram
+let currentInstagramCampaignIndex = 0;
+let instagramCampaignBusinesses = [];
+
 // Decodificar JSON Web Token (JWT) devuelto por Google Identity Services
 function decodeJwt(token) {
   try {
@@ -1138,6 +1156,25 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // Renderizar checkboxes de rubros dinámicamente
   renderRubrosCheckboxes();
+
+  // Lógica para alternar el canal de envío (Gmail vs Instagram)
+  function toggleChannelUI() {
+    if (channelInstagram.checked) {
+      smtpCredentialsContainer.style.display = "none";
+      instagramCVNotice.style.display = "block";
+      userPasswordInput.removeAttribute("required");
+    } else {
+      smtpCredentialsContainer.style.display = "block";
+      instagramCVNotice.style.display = "none";
+      userPasswordInput.setAttribute("required", "required");
+    }
+  }
+
+  if (channelEmail && channelInstagram) {
+    channelEmail.addEventListener("change", toggleChannelUI);
+    channelInstagram.addEventListener("change", toggleChannelUI);
+    toggleChannelUI();
+  }
 });
 
 // Botón para aplicar Client ID real
@@ -1613,8 +1650,9 @@ function updateWizardUI() {
     }
     
     btnNext.style.background = "linear-gradient(135deg, #00bee6 0%, #009ee2 100%)";
-    // Deshabilitar botón Siguiente hasta que se confirme el pago y se suba el CV
-    btnNext.disabled = !checkPaymentConfirmed.checked || !selectedFile;
+    // Deshabilitar botón Siguiente hasta que se confirme el pago y se suba el CV (si es email)
+    const isEmailChannel = channelEmail && channelEmail.checked;
+    btnNext.disabled = !checkPaymentConfirmed.checked || (isEmailChannel && !selectedFile);
   } else if (currentStep === 4) {
     btnNext.innerText = "Campaña Activa";
     btnNext.disabled = true;
@@ -1629,6 +1667,8 @@ function updateWizardUI() {
 
 // Validaciones por paso
 function validateStep(step) {
+  const isEmailChannel = channelEmail && channelEmail.checked;
+  
   if (step === 1) {
     if (!userNameInput.value.trim()) {
       alert("Por favor, inicia sesión con tu cuenta de Google.");
@@ -1638,7 +1678,7 @@ function validateStep(step) {
       alert("Por favor, inicia sesión con un correo de Gmail verificado.");
       return false;
     }
-    if (!userPasswordInput.value.trim()) {
+    if (isEmailChannel && !userPasswordInput.value.trim()) {
       alert("Por favor, ingresa tu contraseña de aplicación SMTP.");
       return false;
     }
@@ -1673,7 +1713,7 @@ function validateStep(step) {
       alert("Por favor, completa el pago en la pestaña de Mercado Pago y confirma la casilla.");
       return false;
     }
-    if (!selectedFile) {
+    if (isEmailChannel && !selectedFile) {
       alert("Por favor, sube tu CV en formato PDF antes de continuar.");
       return false;
     }
@@ -1872,6 +1912,19 @@ async function startCampaign() {
   statSent.innerText = 0;
   statRemaining.innerText = businesses.length;
 
+  const isIg = channelInstagram && channelInstagram.checked;
+  if (isIg) {
+    appendLog(`[📸 CANAL INSTAGRAM] Iniciando flujo uno a uno por Instagram Direct...`, "info");
+    instagramCampaignBusinesses = [...businesses];
+    currentInstagramCampaignIndex = 0;
+    
+    // Mostrar panel interactivo de Instagram
+    instagramManualContainer.style.display = "block";
+    
+    showNextInstagramBusiness();
+    return;
+  }
+
   appendLog(`[PAGO REAL] Transacción confirmada para el link de Mercado Pago (https://mpago.la/13pCrpN).`, "success");
   appendLog(`[CARGA] Procesando currículum PDF para transferencia...`, "info");
 
@@ -2023,9 +2076,117 @@ btnNewCampaign.addEventListener("click", () => {
   // Ocultar el botón
   btnNewCampaign.style.display = "none";
   
+  // Resetear y ocultar panel de Instagram
+  if (instagramManualContainer) instagramManualContainer.style.display = "none";
+  currentInstagramCampaignIndex = 0;
+  instagramCampaignBusinesses = [];
+
   // Volver al Paso 2
   currentStep = 2;
   updateWizardUI();
   
   appendLog("[SISTEMA] Iniciando configuración de nueva campaña de envío.", "info");
 });
+
+// Función para mostrar el siguiente contacto de Instagram en el panel interactivo
+function showNextInstagramBusiness() {
+  if (currentInstagramCampaignIndex >= instagramCampaignBusinesses.length) {
+    appendLog(`[SISTEMA] Campaña de Instagram finalizada. Se procesaron ${instagramCampaignBusinesses.length} empresas.`, "success");
+    if (instagramManualContainer) instagramManualContainer.style.display = "none";
+    isSending = false;
+    btnNewCampaign.style.display = "block";
+    return;
+  }
+
+  const business = instagramCampaignBusinesses[currentInstagramCampaignIndex];
+  
+  // Normalizar nombre de la empresa para el handle de Instagram (quitar espacios, acentos, y caracteres especiales)
+  const cleanHandle = business.name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // remover acentos
+    .replace(/[^a-z0-9]/g, ""); // remover no alfanuméricos
+  
+  const handle = `@${cleanHandle}`;
+
+  // Actualizar elementos de la interfaz
+  if (igCurrentBusinessName) igCurrentBusinessName.innerText = business.name;
+  if (igCurrentHandle) igCurrentHandle.innerText = handle;
+  
+  statSent.innerText = currentInstagramCampaignIndex;
+  statRemaining.innerText = instagramCampaignBusinesses.length - currentInstagramCampaignIndex;
+  
+  const progressPercentage = (currentInstagramCampaignIndex / instagramCampaignBusinesses.length) * 100;
+  sendingProgressBar.style.width = `${progressPercentage}%`;
+
+  appendLog(`Listo para contactar a: ${business.name} (${handle}) vía Instagram Direct.`, "info");
+}
+
+// Event Listeners para los controles de Instagram Direct
+if (btnIgAction) {
+  btnIgAction.addEventListener("click", () => {
+    if (!isSending) return;
+
+    const business = instagramCampaignBusinesses[currentInstagramCampaignIndex];
+    const parsedBody = emailBodyInput.value
+      .replace(/{nombre_empresa}/g, business.name)
+      .replace(/{nombre_candidato}/g, userNameInput.value);
+
+    // Intentar copiar la carta de presentación al portapapeles
+    navigator.clipboard.writeText(parsedBody).then(() => {
+      appendLog(`✓ Mensaje de presentación copiado al portapapeles.`, "success");
+    }).catch(err => {
+      console.error("Error al copiar al portapapeles:", err);
+      // Fallback
+      try {
+        const textArea = document.createElement("textarea");
+        textArea.value = parsedBody;
+        textArea.style.position = "fixed";
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+        appendLog(`✓ Mensaje copiado al portapapeles (modo secundario).`, "success");
+      } catch (e) {
+        appendLog(`⚠️ No se pudo copiar el texto automáticamente. Cópialo tú mismo.`, "warning");
+      }
+    });
+
+    // Normalizar nombre de la empresa para URL de Instagram
+    const cleanName = business.name
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]/g, "");
+
+    const igUrl = `https://www.instagram.com/${cleanName}/`;
+    window.open(igUrl, "_blank");
+
+    appendLog(`[📸 INSTAGRAM] Abriendo perfil de ${business.name}: ${igUrl}`, "success");
+    
+    // Avanzar al siguiente paso
+    currentInstagramCampaignIndex++;
+    showNextInstagramBusiness();
+  });
+}
+
+if (btnIgSkip) {
+  btnIgSkip.addEventListener("click", () => {
+    if (!isSending) return;
+
+    const business = instagramCampaignBusinesses[currentInstagramCampaignIndex];
+    appendLog(`[OMITIDO] Se omitió contactar a: ${business.name} en Instagram.`, "warning");
+
+    currentInstagramCampaignIndex++;
+    showNextInstagramBusiness();
+  });
+}
+
+if (btnIgPause) {
+  btnIgPause.addEventListener("click", () => {
+    isSending = false;
+    if (instagramManualContainer) instagramManualContainer.style.display = "none";
+    appendLog(`[SISTEMA] Campaña de Instagram pausada por el usuario.`, "warning");
+    btnNewCampaign.style.display = "block";
+  });
+}
