@@ -969,6 +969,28 @@ const scrapingSummaryText = document.getElementById("scrapingSummaryText");
 let scrapedBusinesses = [];
 let isScraping = false;
 
+// --- CONFIGURACIÓN DE SUPABASE (FASE 2) ---
+const SUPABASE_URL = "https://cssxmqtejlbrsaetybut.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_OKXZ3_RZCPJKfDsaVqEBRw_z0w0N3gs";
+const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+if (!supabase) {
+  console.error("No se pudo cargar la librería de Supabase desde el CDN.");
+}
+
+let currentUser = null;
+let currentProfile = null;
+
+// Elementos DOM para Autenticación Real de Supabase
+const tabBtnLogin = document.getElementById("tabBtnLogin");
+const tabBtnRegister = document.getElementById("tabBtnRegister");
+const groupAuthName = document.getElementById("groupAuthName");
+const authNameInput = document.getElementById("authName");
+const authEmailInput = document.getElementById("authEmail");
+const authPasswordInput = document.getElementById("authPassword");
+const authForm = document.getElementById("authForm");
+const authMessage = document.getElementById("authMessage");
+const btnSubmitAuth = document.getElementById("btnSubmitAuth");
+
 // Inicialización de variables
 const userNameInput = document.getElementById("userName");
 const userEmailInput = document.getElementById("userEmail");
@@ -1166,37 +1188,52 @@ function addToSentHistory(name, contactInfo) {
     timestamp: Date.now()
   });
   localStorage.setItem("winktact_sent_history", JSON.stringify(filteredHistory));
+
+  // Registrar en Supabase si hay sesión activa
+  if (supabase && currentUser) {
+    supabase
+      .from("sent_history")
+      .insert({
+        user_id: currentUser.id,
+        business_name: name,
+        contact_info: contactInfo,
+        timestamp: new Date().toISOString()
+      })
+      .then(({ error }) => {
+        if (error) console.error("Error al registrar historial en la nube:", error);
+        else console.log(`[NUBE] Historial registrado para: ${name}`);
+      });
+  }
 }
 
 let updatePreviews = function() {};
 
 // Escuchar cambios para cargar sesión previa y estado de pago
 window.addEventListener("DOMContentLoaded", () => {
-  const cachedName = sessionStorage.getItem("winktact_username");
-  const cachedEmail = sessionStorage.getItem("winktact_useremail");
-  if (cachedName && cachedEmail) {
-    loginSuccess(cachedName, cachedEmail);
-  }
-  
-  // Si ya hay un Client ID guardado o predeterminado antes de que termine de cargar el script, actualizar inputs de UI
-  const defaultClientId = "1052093506321-h8cp5k13d6ldc78o0rc119h3m85i5m60.apps.googleusercontent.com";
-  const useSimulated = localStorage.getItem("winktact_use_simulated") === "true";
-  const savedClientId = useSimulated ? null : (localStorage.getItem("winktact_google_client_id") || defaultClientId);
-  
-  if (savedClientId) {
-    googleClientIdInput.value = savedClientId;
-    btnResetClientId.style.display = "inline-block";
-    btnApplyClientId.innerText = "Actualizar Client ID";
-    clientIdStatus.innerText = "✓ Modo Real Activo (Cargando SDK...)";
-    clientIdStatus.style.color = "var(--text-secondary)";
+  // --- CARGAR SESIÓN DE SUPABASE ACTIVA ---
+  if (supabase) {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        currentUser = session.user;
+        localStorage.setItem("winktact_supabase_token", session.access_token);
+        loadUserProfileAndData();
+      } else {
+        localStorage.removeItem("winktact_supabase_token");
+        // Mostrar pantalla de login si no hay sesión
+        appContainer.style.display = "none";
+        loginContainer.style.display = "block";
+      }
+    }).catch(err => {
+      console.error("Error al obtener la sesión de Supabase:", err);
+    });
   } else {
-    clientIdStatus.innerText = "✓ Modo Simulado Activo";
-    clientIdStatus.style.color = "var(--accent-color)";
-  }
-  
-  // Si la biblioteca de Google ya se cargó en caché antes de DOMContentLoaded
-  if (typeof google !== "undefined" && google.accounts && savedClientId) {
-    googleSdkLoaded();
+    // Si no hay Supabase, usar fallback anterior
+    const cachedName = sessionStorage.getItem("winktact_username");
+    const cachedEmail = sessionStorage.getItem("winktact_useremail");
+    if (cachedName && cachedEmail) {
+      loginContainer.style.display = "none";
+      appContainer.style.display = "block";
+    }
   }
 
   // Detección de retorno de Mercado Pago en la URL
@@ -1208,6 +1245,25 @@ window.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("winktact_payment_id", paymentId);
     localStorage.setItem("winktact_paid", "true");
     appendLog(`[MERCADO PAGO] Pago aprobado detectado en URL (ID: ${paymentId}). Licencia activada.`, "success");
+    
+    // Registrar pago en Supabase si hay sesión activa
+    if (supabase) {
+      supabase.auth.getSession().then(async ({ data: { session } }) => {
+        if (session && session.user) {
+          const { error } = await supabase
+            .from("profiles")
+            .update({
+              payment_id: paymentId,
+              paid: true,
+              updated_at: new Date().toISOString()
+            })
+            .eq("id", session.user.id);
+          if (error) console.error("Error al actualizar pago en Supabase:", error);
+          else appendLog("[NUBE] Licencia de pago registrada y sincronizada en Supabase.", "success");
+        }
+      });
+    }
+
     // Limpiar URL
     window.history.replaceState({}, document.title, window.location.pathname);
   }
@@ -1367,7 +1423,34 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // 4. Auto-save (Guardar progreso en localStorage)
+  // 4. Auto-save (Guardar progreso en localStorage y Supabase con debounce)
+  let supabaseSaveTimeout = null;
+  function syncTemplatesToCloud() {
+    if (!supabase || !currentUser) return;
+    clearTimeout(supabaseSaveTimeout);
+    supabaseSaveTimeout = setTimeout(async () => {
+      const subject = emailSubjectInput ? emailSubjectInput.value : '';
+      const body = emailBodyInput ? emailBodyInput.value : '';
+      const igBody = instagramBodyInput ? instagramBodyInput.value : '';
+
+      const { error } = await supabase
+        .from("templates")
+        .upsert({
+          user_id: currentUser.id,
+          email_subject: subject,
+          email_body: body,
+          instagram_body: igBody,
+          updated_at: new Date().toISOString()
+        }, { onConflict: "user_id" });
+
+      if (error) {
+        console.error("Error sincronizando plantilla en Supabase:", error);
+      } else {
+        console.log("[NUBE] Plantillas sincronizadas en Supabase.");
+      }
+    }, 1500);
+  }
+
   function saveToLocalStorage() {
     localStorage.setItem("winktact_userName", userNameInput.value);
     localStorage.setItem("winktact_userEmail", userEmailInput.value);
@@ -1387,6 +1470,9 @@ window.addEventListener("DOMContentLoaded", () => {
     
     const selectedRubros = getSelectedRubros();
     localStorage.setItem("winktact_selected_rubros", JSON.stringify(selectedRubros));
+
+    // Sincronizar con la nube (Supabase)
+    syncTemplatesToCloud();
   }
 
   // 5. Restaurar Progreso desde localStorage (Auto-save)
@@ -1520,31 +1606,223 @@ window.addEventListener("DOMContentLoaded", () => {
   loadFromLocalStorage();
 });
 
-// Botón para aplicar Client ID real
-btnApplyClientId.addEventListener("click", () => {
-  const clientId = googleClientIdInput.value.trim();
-  if (!clientId) {
-    alert("Por favor, ingresa un Client ID válido.");
-    return;
-  }
-  localStorage.removeItem("winktact_use_simulated");
-  localStorage.setItem("winktact_google_client_id", clientId);
-  initGoogleIdentity(clientId);
-});
+// --- MANEJO DE AUTENTICACIÓN REAL CON SUPABASE ---
+let currentAuthTab = "login"; // "login" o "register"
 
-// Botón para restablecer a modo simulado
-btnResetClientId.addEventListener("click", () => {
-  localStorage.setItem("winktact_use_simulated", "true");
-  localStorage.removeItem("winktact_google_client_id");
-  googleClientIdInput.value = "";
-  document.getElementById("gSignInContainer").style.display = "none";
-  btnGoogleLoginSimulated.style.display = "flex";
-  btnResetClientId.style.display = "none";
-  btnApplyClientId.innerText = "Activar Login Real";
-  clientIdStatus.innerText = "✓ Restablecido al Modo Simulado";
-  clientIdStatus.style.color = "var(--accent-color)";
-  appendLog("[SISTEMA] Restablecido al modo de inicio de sesión simulado.", "info");
-});
+if (tabBtnLogin && tabBtnRegister) {
+  tabBtnLogin.addEventListener("click", () => {
+    currentAuthTab = "login";
+    tabBtnLogin.style.background = "rgba(168, 85, 247, 0.2)";
+    tabBtnLogin.style.color = "white";
+    tabBtnLogin.style.fontWeight = "700";
+    
+    tabBtnRegister.style.background = "none";
+    tabBtnRegister.style.color = "var(--text-secondary)";
+    tabBtnRegister.style.fontWeight = "600";
+    
+    if (groupAuthName) groupAuthName.style.display = "none";
+    if (authNameInput) authNameInput.removeAttribute("required");
+    
+    const subtitle = document.getElementById("authSubtitle");
+    if (subtitle) subtitle.innerText = "Inicia sesión en tu cuenta en la nube";
+    if (btnSubmitAuth) btnSubmitAuth.innerText = "Ingresar a mi Cuenta";
+  });
+
+  tabBtnRegister.addEventListener("click", () => {
+    currentAuthTab = "register";
+    tabBtnRegister.style.background = "rgba(168, 85, 247, 0.2)";
+    tabBtnRegister.style.color = "white";
+    tabBtnRegister.style.fontWeight = "700";
+    
+    tabBtnLogin.style.background = "none";
+    tabBtnLogin.style.color = "var(--text-secondary)";
+    tabBtnLogin.style.fontWeight = "600";
+    
+    if (groupAuthName) groupAuthName.style.display = "block";
+    if (authNameInput) authNameInput.setAttribute("required", "required");
+    
+    const subtitle = document.getElementById("authSubtitle");
+    if (subtitle) subtitle.innerText = "Crea una nueva cuenta premium";
+    if (btnSubmitAuth) btnSubmitAuth.innerText = "Crear Cuenta & Comenzar";
+  });
+}
+
+// Envío del formulario de autenticación
+if (authForm) {
+  authForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!supabase) {
+      alert("Error: Supabase no está inicializado.");
+      return;
+    }
+
+    const email = authEmailInput.value.trim().toLowerCase();
+    const password = authPasswordInput.value;
+    const name = authNameInput ? authNameInput.value.trim() : "";
+
+    if (authMessage) {
+      authMessage.style.display = "block";
+      authMessage.style.background = "rgba(255, 255, 255, 0.05)";
+      authMessage.style.color = "white";
+      authMessage.innerText = "Procesando...";
+    }
+
+    if (currentAuthTab === "register") {
+      // REGISTRO
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: name
+          }
+        }
+      });
+
+      if (error) {
+        showAuthMessage(error.message, "danger");
+      } else {
+        showAuthMessage("¡Registro exitoso! Ya puedes iniciar sesión.", "success");
+        // Cambiar automáticamente a pestaña login
+        setTimeout(() => {
+          if (tabBtnLogin) tabBtnLogin.click();
+          if (authPasswordInput) authPasswordInput.value = "";
+        }, 1500);
+      }
+    } else {
+      // INICIO DE SESIÓN
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        showAuthMessage(error.message, "danger");
+      } else {
+        showAuthMessage("¡Sesión iniciada con éxito!", "success");
+        currentUser = data.user;
+        
+        // Obtener el perfil y cargarlo en la UI
+        await loadUserProfileAndData();
+      }
+    }
+  });
+}
+
+function showAuthMessage(text, type) {
+  if (!authMessage) return;
+  authMessage.style.display = "block";
+  if (type === "success") {
+    authMessage.style.background = "rgba(16, 185, 129, 0.1)";
+    authMessage.style.border = "1px solid rgba(16, 185, 129, 0.3)";
+    authMessage.style.color = "#10b981";
+  } else {
+    authMessage.style.background = "rgba(239, 68, 68, 0.1)";
+    authMessage.style.border = "1px solid rgba(239, 68, 68, 0.3)";
+    authMessage.style.color = "#ef4444";
+  }
+  authMessage.innerText = text;
+}
+
+// Cargar perfil del usuario, plantillas e historial desde Supabase
+async function loadUserProfileAndData() {
+  if (!supabase || !currentUser) return;
+
+  appendLog(`[NUBE] Cargando datos de perfil de Supabase para ${currentUser.email}...`, "info");
+
+  // 1. Obtener perfil
+  const { data: profile, error: profileErr } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", currentUser.id)
+    .single();
+
+  if (profileErr) {
+    console.error("Error al cargar perfil de Supabase:", profileErr);
+  } else if (profile) {
+    currentProfile = profile;
+    userNameInput.value = profile.name;
+    userEmailInput.value = profile.email;
+    
+    // Guardar sesión en sessionStorage
+    sessionStorage.setItem("winktact_username", profile.name);
+    sessionStorage.setItem("winktact_useremail", profile.email);
+    
+    // Sincronizar estado de pago en el navegador
+    if (profile.paid) {
+      localStorage.setItem("winktact_paid", "true");
+    } else {
+      localStorage.removeItem("winktact_paid");
+    }
+    if (profile.payment_id) {
+      localStorage.setItem("winktact_payment_id", profile.payment_id);
+    }
+    
+    updatePaymentUI();
+  }
+
+  // 2. Obtener plantillas
+  const { data: template, error: tempErr } = await supabase
+    .from("templates")
+    .select("*")
+    .eq("user_id", currentUser.id)
+    .single();
+
+  if (tempErr) {
+    console.log("No se encontraron plantillas en la nube para el usuario. Se usarán valores locales.");
+  } else if (template) {
+    // Sobrescribir plantillas de UI con las de la nube
+    if (emailSubjectInput && template.email_subject) {
+      emailSubjectInput.value = template.email_subject;
+    }
+    if (emailBodyInput && template.email_body) {
+      emailBodyInput.value = template.email_body;
+      if (richEmailBody) richEmailBody.innerHTML = template.email_body;
+    }
+    if (instagramBodyInput && template.instagram_body) {
+      instagramBodyInput.value = template.instagram_body;
+    }
+    updatePreviews();
+  }
+
+  // 3. Obtener historial
+  const { data: history, error: histErr } = await supabase
+    .from("sent_history")
+    .select("*")
+    .eq("user_id", currentUser.id);
+
+  if (histErr) {
+    console.error("Error al cargar historial desde la nube:", histErr);
+  } else if (history) {
+    // Sincronizar con el historial local
+    const localHistory = getSentHistory();
+    const mergedHistory = [...localHistory];
+    
+    history.forEach(item => {
+      const exists = mergedHistory.some(lh => lh.name.toLowerCase() === item.business_name.toLowerCase());
+      if (!exists) {
+        mergedHistory.push({
+          name: item.business_name,
+          contact: item.contact_info,
+          timestamp: new Date(item.timestamp).getTime()
+        });
+      }
+    });
+    
+    localStorage.setItem("winktact_sent_history", JSON.stringify(mergedHistory));
+  }
+
+  // Guardar token JWT en localStorage para el backend seguro
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (sessionData && sessionData.session) {
+    localStorage.setItem("winktact_supabase_token", sessionData.session.access_token);
+  }
+
+  // Avanzar visualmente
+  loginContainer.style.display = "none";
+  appContainer.style.display = "block";
+  appendLog(`[OK NUBE] Sesión y datos sincronizados con Supabase.`, "success");
+}
 
 // Lógica de alternancia del Origen de Datos (Simulado vs Excel vs Scraping)
 if (sourceSimulated && sourceExcel && sourceScraping) {
@@ -1766,6 +2044,19 @@ if (btnStartScraping) {
 btnLogout.addEventListener("click", () => {
   sessionStorage.removeItem("winktact_username");
   sessionStorage.removeItem("winktact_useremail");
+  localStorage.removeItem("winktact_supabase_token");
+  localStorage.removeItem("winktact_paid");
+  localStorage.removeItem("winktact_payment_id");
+
+  if (supabase) {
+    supabase.auth.signOut().then(() => {
+      console.log("[NUBE] Sesión cerrada en Supabase.");
+    });
+  }
+
+  currentUser = null;
+  currentProfile = null;
+
   userNameInput.value = "";
   userEmailInput.value = "";
   
@@ -1810,70 +2101,6 @@ btnLogout.addEventListener("click", () => {
   loginContainer.style.display = "block";
   
   appendLog("[SISTEMA] Sesión cerrada. Volviendo a la pantalla de login.", "info");
-});
-
-// Lógica del Modal Simulado de Google
-btnGoogleLoginSimulated.addEventListener("click", () => {
-  googleModal.style.display = "flex";
-  // Resetear estados del modal
-  googleAccountsList.style.display = "flex";
-  googleCustomAccountForm.style.display = "none";
-  googleEmailError.style.display = "none";
-  customGoogleEmailInput.value = "";
-  customGoogleNameInput.value = "";
-});
-
-btnCloseGoogleModal.addEventListener("click", () => {
-  googleModal.style.display = "none";
-});
-
-// Hacer clic fuera del contenido del modal para cerrar
-googleModal.addEventListener("click", (e) => {
-  if (e.target === googleModal) {
-    googleModal.style.display = "none";
-  }
-});
-
-// Selección de cuentas por defecto del modal
-const accountItems = document.querySelectorAll(".google-account-item[data-email]");
-accountItems.forEach(item => {
-  item.addEventListener("click", () => {
-    const email = item.getAttribute("data-email");
-    const name = item.getAttribute("data-name");
-    loginSuccess(name, email);
-  });
-});
-
-// Ir a formulario de cuenta personalizada
-btnGoogleCustomAccount.addEventListener("click", () => {
-  googleAccountsList.style.display = "none";
-  googleCustomAccountForm.style.display = "block";
-});
-
-// Volver del formulario de cuenta personalizada
-btnBackToAccounts.addEventListener("click", () => {
-  googleCustomAccountForm.style.display = "none";
-  googleAccountsList.style.display = "flex";
-});
-
-// Procesar formulario de cuenta personalizada
-btnSubmitCustomAccount.addEventListener("click", () => {
-  const email = customGoogleEmailInput.value.trim().toLowerCase();
-  const name = customGoogleNameInput.value.trim();
-  
-  if (!email || !email.endsWith("@gmail.com")) {
-    googleEmailError.style.display = "block";
-    return;
-  }
-  
-  googleEmailError.style.display = "none";
-  
-  if (!name) {
-    alert("Por favor, ingresa tu nombre completo.");
-    return;
-  }
-  
-  loginSuccess(name, email);
 });
 
 // Gestión de Checkboxes de Rubros (Dinámicos)
@@ -2508,11 +2735,17 @@ async function startCampaign() {
     appendLog(`Intentando conexión de red con el servidor de envío real...`, "info");
 
     try {
+      const supabaseToken = localStorage.getItem("winktact_supabase_token");
+      const fetchHeaders = {
+        "Content-Type": "application/json"
+      };
+      if (supabaseToken) {
+        fetchHeaders["Authorization"] = `Bearer ${supabaseToken}`;
+      }
+
       const response = await fetch("/.netlify/functions/send-email", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: fetchHeaders,
         body: JSON.stringify(payload)
       });
 

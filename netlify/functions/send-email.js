@@ -41,13 +41,56 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Verificar pago con Mercado Pago si el token está configurado
-    if (process.env.MP_ACCESS_TOKEN) {
+    // --- VERIFICACIÓN DE PAGO EN SUPABASE (SOCIOS/SAAS) ---
+    let userIsPaid = false;
+    const authHeader = event.headers.authorization || event.headers.Authorization;
+
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.substring(7);
+      const { createClient } = require("@supabase/supabase-js");
+
+      const supabaseUrl = process.env.SUPABASE_URL;
+      const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+
+      if (supabaseUrl && supabaseAnonKey) {
+        try {
+          const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+            auth: { persistSession: false },
+            global: {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            }
+          });
+
+          // Obtener usuario autenticado
+          const { data: { user }, error: userErr } = await supabase.auth.getUser(token);
+          if (!userErr && user) {
+            // Consultar base de datos
+            const { data: profile, error: profileErr } = await supabase
+              .from("profiles")
+              .select("paid")
+              .eq("id", user.id)
+              .single();
+
+            if (!profileErr && profile && profile.paid) {
+              userIsPaid = true;
+              console.log(`[CONEXIÓN NUBE OK] Usuario ${user.email} autenticado y verificado como PAGADO.`);
+            }
+          }
+        } catch (dbErr) {
+          console.error("Error al validar sesión contra Supabase:", dbErr);
+        }
+      }
+    }
+
+    // Verificar pago con Mercado Pago si el token está configurado y no fue pre-verificado en la nube
+    if (!userIsPaid && process.env.MP_ACCESS_TOKEN) {
       if (!paymentId) {
         return {
           statusCode: 402,
           headers,
-          body: JSON.stringify({ error: "Verificación de pago requerida. Por favor, ingresa tu ID de pago." })
+          body: JSON.stringify({ error: "Verificación de pago requerida. Inicia sesión o ingresa tu ID de pago." })
         };
       }
 
