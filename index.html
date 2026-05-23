@@ -146,7 +146,7 @@
 
     <!-- Step 1: Configuración de Cuenta y CV -->
     <div class="step-content active" id="step1">
-      <h3 style="margin-bottom: 1.5rem; color: var(--accent-color);">Paso 1: Tu cuenta y Currículum</h3>
+      <h3 style="margin-bottom: 1.5rem; color: var(--accent-color);">Paso 1: Cuenta y Credenciales</h3>
       
       <div class="form-group">
         <label for="userName">Tu Nombre Completo (Verificado por Google)</label>
@@ -194,19 +194,6 @@
           </div>
         </div>
       </details>
-
-
-      <div class="form-group" style="margin-top: 2rem;">
-        <label>Sube tu CV en formato PDF</label>
-        <div class="file-upload-wrapper" id="fileUploadWrapper">
-          <input type="file" id="cvFile" accept=".pdf" required>
-          <div class="file-upload-text" id="uploadText">
-            Arrastra tu archivo aquí o <span>haz clic para buscar</span><br>
-            <small style="font-size: 0.8rem; color: var(--text-secondary);">Solo archivos PDF de hasta 5MB</small>
-          </div>
-        </div>
-        <div class="file-name-display" id="fileNameDisplay"></div>
-      </div>
     </div>
 
     <!-- Step 2: Segmentación y Asunto -->
@@ -321,7 +308,7 @@
 
     <!-- Step 3: Pasarela de Pago -->
     <div class="step-content" id="step3">
-      <h3 style="margin-bottom: 1.5rem; color: var(--accent-color);">Paso 3: Acceso Completo</h3>
+      <h3 style="margin-bottom: 1.5rem; color: var(--accent-color);">Paso 3: Acceso y Adjuntar CV</h3>
       
       <p id="paymentIntroText" style="color: var(--text-secondary); margin-bottom: 2rem; line-height: 1.5;">
         Para tener acceso ilimitado de por vida y realizar todos los envíos que desees en cualquier momento, debes abonar la tarifa única del servicio.
@@ -379,12 +366,24 @@
         </div>
       </div>
 
-      <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 1.25rem; font-size: 0.9rem; line-height: 1.5;">
+      <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 1.25rem; font-size: 0.9rem; line-height: 1.5; margin-bottom: 1.5rem;">
         <span style="color: var(--accent-color); font-weight: 700;">¿Qué incluye el servicio de acceso ilimitado?</span><br>
         • Extracción y búsqueda sin límites de empresas en cualquier ciudad.<br>
         • Envío ilimitado de currículums a todos los rubros elegidos.<br>
         • Uso del sistema cuantas veces quieras y cuando quieras.<br>
         • Licencia permanente vinculada a tu navegador.
+      </div>
+
+      <div class="form-group" style="margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 2rem;">
+        <label style="font-weight: 700; color: var(--accent-color); margin-bottom: 0.75rem; display: block;">📎 Paso Final: Sube tu CV en formato PDF</label>
+        <div class="file-upload-wrapper" id="fileUploadWrapper">
+          <input type="file" id="cvFile" accept=".pdf" required>
+          <div class="file-upload-text" id="uploadText">
+            Arrastra tu archivo aquí o <span>haz clic para buscar</span><br>
+            <small style="font-size: 0.8rem; color: var(--text-secondary);">Solo archivos PDF de hasta 5MB</small>
+          </div>
+        </div>
+        <div class="file-name-display" id="fileNameDisplay" style="margin-top: 0.75rem;"></div>
       </div>
     </div>
 

@@ -1092,7 +1092,7 @@ function updatePaymentUI() {
 
   // Actualizar habilitación del botón siguiente en el paso 3
   if (currentStep === 3) {
-    btnNext.disabled = !checkPaymentConfirmed.checked;
+    btnNext.disabled = !checkPaymentConfirmed.checked || !selectedFile;
   }
 }
 
@@ -1132,10 +1132,10 @@ if (btnResetPayment) {
   });
 }
 
-// Habilitar/deshabilitar botón siguiente según confirmación de pago
+// Habilitar/deshabilitar botón siguiente según confirmación de pago y CV cargado
 checkPaymentConfirmed.addEventListener("change", () => {
   if (currentStep === 3) {
-    btnNext.disabled = !checkPaymentConfirmed.checked;
+    btnNext.disabled = !checkPaymentConfirmed.checked || !selectedFile;
   }
 });
 
@@ -1162,10 +1162,19 @@ function updateWizardUI() {
   if (currentStep === 3) {
     const city = document.getElementById("businessCity").value.trim() || "Pergamino";
     document.getElementById("mpCampaignTitle").innerText = `Campaña 50 Envíos Diarios - ${city}`;
-    btnNext.innerText = "Siguiente (Confirmar Pago)";
+    
+    // Si ya pagó, el botón dice "Iniciar Envíos", sino dice "Siguiente (Confirmar Pago)"
+    const savedPaymentId = localStorage.getItem("winktact_payment_id");
+    const hasPaid = localStorage.getItem("winktact_paid") === "true" || savedPaymentId === "999999999";
+    if (hasPaid) {
+      btnNext.innerText = "Iniciar Envíos";
+    } else {
+      btnNext.innerText = "Siguiente (Confirmar Pago)";
+    }
+    
     btnNext.style.background = "linear-gradient(135deg, #00bee6 0%, #009ee2 100%)";
-    // Deshabilitar botón Siguiente hasta que se confirme el pago
-    btnNext.disabled = !checkPaymentConfirmed.checked;
+    // Deshabilitar botón Siguiente hasta que se confirme el pago y se suba el CV
+    btnNext.disabled = !checkPaymentConfirmed.checked || !selectedFile;
   } else if (currentStep === 4) {
     btnNext.innerText = "Campaña Activa";
     btnNext.disabled = true;
@@ -1191,10 +1200,6 @@ function validateStep(step) {
     }
     if (!userPasswordInput.value.trim()) {
       alert("Por favor, ingresa tu contraseña de aplicación SMTP.");
-      return false;
-    }
-    if (!selectedFile) {
-      alert("Por favor, sube tu CV en formato PDF antes de continuar.");
       return false;
     }
   } else if (step === 2) {
@@ -1226,6 +1231,10 @@ function validateStep(step) {
   } else if (step === 3) {
     if (!checkPaymentConfirmed.checked) {
       alert("Por favor, completa el pago en la pestaña de Mercado Pago y confirma la casilla.");
+      return false;
+    }
+    if (!selectedFile) {
+      alert("Por favor, sube tu CV en formato PDF antes de continuar.");
       return false;
     }
   }
@@ -1298,6 +1307,9 @@ cvFileInput.addEventListener("change", (e) => {
     uploadText.innerHTML = `CV Adjunto: <strong>${file.name}</strong><br><small style="color: var(--success-color);">Cambiar de archivo</small>`;
     fileNameDisplay.innerText = `Archivo cargado exitosamente: ${file.name}`;
     fileNameDisplay.style.display = "block";
+    
+    // Actualizar botones de navegación si estamos en el Paso 3
+    updatePaymentUI();
   }
 });
 
