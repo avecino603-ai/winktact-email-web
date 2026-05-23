@@ -26,6 +26,18 @@ const LOCAL_BUSINESS_DB = {
     {
       "name": "Dincor Pergamino Mayorista Ferretero",
       "email": "dincorpergamino@gmail.com"
+    },
+    {
+      "name": "Construfer Pergamino",
+      "email": "construferpergamino@live.com.ar"
+    },
+    {
+      "name": "Ferretería Centenario",
+      "email": "ferreteriacentenario@speedy.com.ar"
+    },
+    {
+      "name": "Ferretería Pergamino",
+      "email": "oscarandrieux@hotmail.com"
     }
   ],
   "Corralón de Materiales": [
@@ -94,6 +106,26 @@ const LOCAL_BUSINESS_DB = {
     {
       "name": "Cimaper",
       "email": "5d1795a2db124a268f1e1bd88f503500@sentry.wixpress.com"
+    },
+    {
+      "name": "Conrado Muebles",
+      "email": "cm@conradomuebles.com.ar"
+    },
+    {
+      "name": "Cooperativa Total Madera / Hogar Muebles",
+      "email": "coop_totalmadera@hotmail.com, hogarmuebles1@gmail.com"
+    },
+    {
+      "name": "Ezequiel Maderas",
+      "email": "ezequielmaderassrl@bbt11.com.ar"
+    },
+    {
+      "name": "Muebles El Turquito",
+      "email": "el_turquito_pergamino@hotmail.com, javierfaisal@live.com.ar"
+    },
+    {
+      "name": "Pergamino Muebles",
+      "email": "ventas@pergaminomuebles.com.ar"
     }
   ],
   "Perfumería": [
@@ -226,6 +258,10 @@ const LOCAL_BUSINESS_DB = {
     {
       "name": "Seratto Campos",
       "email": "info@serattopropiedades.com"
+    },
+    {
+      "name": "Vila Inmobiliaria",
+      "email": "info@vilainmobiliaria.com.ar"
     }
   ],
   "Arquitecto": [
@@ -456,6 +492,30 @@ const LOCAL_BUSINESS_DB = {
     {
       "name": "Nueva Chevallier",
       "email": "consultas@gestionbus.com.ar"
+    },
+    {
+      "name": "Caluch Viajes",
+      "email": "pergamino@caluchviajes.com.ar"
+    },
+    {
+      "name": "Conforti Viajes",
+      "email": "confort@infovia.com.ar"
+    },
+    {
+      "name": "Hoteles (Varios)",
+      "email": "hotelamericano@ciudad.com.ar, info@hotelfenicia.com.ar, terrazashotel@terrazashotel.com.ar"
+    },
+    {
+      "name": "Kawai Tours",
+      "email": "kawaiturismo@gmail.com"
+    },
+    {
+      "name": "Ramundo Travel Service",
+      "email": "ramundotravel@speedy.com.ar"
+    },
+    {
+      "name": "Viajes Idigoras",
+      "email": "gggviajes@anders.com.ar"
     }
   ],
   "Fletes": [
@@ -476,6 +536,386 @@ const LOCAL_BUSINESS_DB = {
     {
       "name": "Imprenta Relaco- Impresiones",
       "email": "imprenta_realco@outlook.com"
+    }
+  ],
+  "General": [
+    {
+      "name": "Aberturas de Aluminio",
+      "email": "hola.aberturasdealuminio@hotmail.com"
+    },
+    {
+      "name": "ABS JAMB SRL",
+      "email": "COMERCIAL@CORPABS.COM"
+    },
+    {
+      "name": "ACA (Asociación de Cooperativas Argentinas)",
+      "email": "suelo@acacoop.com.ar"
+    },
+    {
+      "name": "ACARA (Asociación de Concesionarios de Automotores)",
+      "email": "info@acara.org.ar"
+    },
+    {
+      "name": "AFA (Agricultores Federados Argentinos)",
+      "email": "afapergamino@afascl.coop"
+    },
+    {
+      "name": "Agropergamino",
+      "email": "info@agropergamino.com"
+    },
+    {
+      "name": "Agrorepuestos Pergamino",
+      "email": "info@agrorepuestospergamino.com.ar"
+    },
+    {
+      "name": "AIAMBA",
+      "email": "aiamba@bbt11.com.ar"
+    },
+    {
+      "name": "APICOFOM",
+      "email": "apicofom@gmail.com"
+    },
+    {
+      "name": "APYMEL",
+      "email": "administracion@apymel.com.ar"
+    },
+    {
+      "name": "Arturo Ayala y Alejandro Muñoz",
+      "email": "QVCHEM@GMAIL.COM"
+    },
+    {
+      "name": "Asociación de Comerciantes (Varias)",
+      "email": "info@aciph.com.ar, acavaristobulodelvalle@gmail.com, camaramh@gmail.com, aci@coopvgg.com.ar, info@acipgoya.com, camdecomlasbrenas@hotmail.com"
+    },
+    {
+      "name": "Baumer CR",
+      "email": "cbaumer@ymail.com"
+    },
+    {
+      "name": "Bernard Técnica Metalmecánica",
+      "email": "bernardtecnica@hotmail.com"
+    },
+    {
+      "name": "Biscayart Forrajeras",
+      "email": "emillas@biscayart.com.ar"
+    },
+    {
+      "name": "Borda-Per",
+      "email": "bordaper@speedy.com.ar"
+    },
+    {
+      "name": "Botti Jeans",
+      "email": "contactobottijeans@gmail.com"
+    },
+    {
+      "name": "Cámaras Sectoriales y Nacionales",
+      "email": "director@cace.org.ar, caceima@hotmail.com, info@cadam.com.ar, cadefha@cadefha.com.ar, caesi@fibertel.com.ar, comunicacion@cafcco.com.ar, camara@cafma.org.ar, cafragas@speedy.com.ar, gerencia.cagnc@gmail.com, info@camarapapel.org.ar, info@cadiesel.com.ar, camaracoser2@hotmail.com, lacamaravp@yahoo.com.ar, info@camaradelsweater.com"
+    },
+    {
+      "name": "Cámara de Comercio de Pergamino",
+      "email": "secretaria@camarapergamino.org.ar, info@camarapergamino.org.ar"
+    },
+    {
+      "name": "Cámaras Comerciales Regionales",
+      "email": "camara@camaracomercialbolivar.com.ar, info@ccicanuelas.com.ar, info@camaradetigre.org, camaracomerciovarela@yahoo.com.ar, camaracomercialchilecito@hotmail.com.ar, cciar@elbolson.com"
+    },
+    {
+      "name": "CAME",
+      "email": "diplomaturas@came.org.ar"
+    },
+    {
+      "name": "Casa del Motor",
+      "email": "info@casadelmotor.com.ar, murisengo_ivana@yahoo.com.ar"
+    },
+    {
+      "name": "Casa Mustafa",
+      "email": "casamustafa@gmail.com"
+    },
+    {
+      "name": "Centros Comerciales Regionales",
+      "email": "cclagunapaiva@yahoo.com.ar, centrocomercialsanjavier@gmail.com"
+    },
+    {
+      "name": "Chamena Industria",
+      "email": "info@chamena.com"
+    },
+    {
+      "name": "Clínica Pergamino",
+      "email": "sugerencias@clinicpergamino.com"
+    },
+    {
+      "name": "CNC Per",
+      "email": "cnc-per@hotmail.com"
+    },
+    {
+      "name": "Colegios Profesionales/Instituciones",
+      "email": "capabog@bbt11.com.ar, cpceperg@satlink.com.ar, mt081001@abc.gov.ar"
+    },
+    {
+      "name": "Colchones O'Connor",
+      "email": "colchonesoconnor@celpinf.com.ar"
+    },
+    {
+      "name": "Compacto Group",
+      "email": "info@compactogroup.com"
+    },
+    {
+      "name": "Coolseed",
+      "email": "contacto@coolseed.com.ar"
+    },
+    {
+      "name": "Cooperativa Eléctrica",
+      "email": "aotero@celp.com.ar"
+    },
+    {
+      "name": "CNEA",
+      "email": "jmontero@cnea.gob.ar"
+    },
+    {
+      "name": "CTE Bahía Blanca",
+      "email": "CTE.ADMINISTRA@BAHIABLANCA.GOV.AR"
+    },
+    {
+      "name": "Drop Denim",
+      "email": "dropdenim22@gmail.com"
+    },
+    {
+      "name": "Echevarne Hnos",
+      "email": "info@echevarnehnos.com.ar"
+    },
+    {
+      "name": "Eleg / Estrucplan",
+      "email": "eleg@estrucplan.com.ar"
+    },
+    {
+      "name": "ESEI Servicios Industriales",
+      "email": "INFO@ESEISRL.COM.AR"
+    },
+    {
+      "name": "Fitoquímica",
+      "email": "info@fitoquimica.com.ar"
+    },
+    {
+      "name": "Genitrini Hnos",
+      "email": "genitrinihnos@speedy.com.ar, genitrinihnos@hotmail.com"
+    },
+    {
+      "name": "Genoud",
+      "email": "ventas@genoudmuebles.com.ar"
+    },
+    {
+      "name": "Guardar Pergamino",
+      "email": "ventas@guardarpergamino.com.ar"
+    },
+    {
+      "name": "Guía Pergamino",
+      "email": "gp.guiapergamino@gmail.com"
+    },
+    {
+      "name": "Guimaite SRL",
+      "email": "adm.guimaite.srl@gmail.com"
+    },
+    {
+      "name": "Gutierrez Bernardo y Roman",
+      "email": "guitierrezbernardoyroman@hotmail.com"
+    },
+    {
+      "name": "Haras L' Etalon",
+      "email": "l.etalon@hotmail.com"
+    },
+    {
+      "name": "Hospital Zonal",
+      "email": "higa@multinetmo.com.ar"
+    },
+    {
+      "name": "Humberto Giménez / Giménez Usados",
+      "email": "humberto.gim@hotmail.com"
+    },
+    {
+      "name": "INCAM SA",
+      "email": "GRAVECC@YAHOO.COM.AR"
+    },
+    {
+      "name": "INPLA S.A.",
+      "email": "info@inpla.com.ar, atencionalcliente@inpla.com.ar, sucursalrosario@inpla.com.ar, sucursalmendoza@inpla.com.ar, sucursaltucuman@inpla.com.ar, sucursalcordoba@inpla.com.ar, sucursalmardelplata@inpla.com.ar, sucursallanus@inpla.com.ar"
+    },
+    {
+      "name": "Instituto Analítico Especializado",
+      "email": "INFO@INSTITUTOANALITICO.COM.AR"
+    },
+    {
+      "name": "INTA",
+      "email": "perdir@pergamino.inta.gov.ar"
+    },
+    {
+      "name": "Kindermetal",
+      "email": "kindermetal@speedy.com.ar"
+    },
+    {
+      "name": "Laboratorio Alfa Consultores",
+      "email": "LABORATORIOALFACONSULTORES@GMAIL.COM"
+    },
+    {
+      "name": "Laboratorio Cataldi",
+      "email": "CATALDI@LABORATORIOCATALDI.COM.AR"
+    },
+    {
+      "name": "Laboratorios GADEF (Faisan)",
+      "email": "NMERCURI@FAISANSA.COM.AR"
+    },
+    {
+      "name": "Laboratorios LABAC",
+      "email": "DTLABORATORIOMARI@GMAIL.COM"
+    },
+    {
+      "name": "Laboratorios Reca",
+      "email": "RECA@RECASRL.COM.AR"
+    },
+    {
+      "name": "Laboratorios Scudelati",
+      "email": "LABORATORIO@SCUDELATI.COM.AR"
+    },
+    {
+      "name": "Laboratorios SPM",
+      "email": "SPM.COMERCIAL@GMAIL.COM"
+    },
+    {
+      "name": "Laboratorio Rayen",
+      "email": "rayen@rayenlab.com.ar, info@rayenlab.com.ar, apetinari@rayenlab.com.ar, raulh@rayenlab.com.ar, amartinelli@rayenlab.com.ar"
+    },
+    {
+      "name": "Lácteos Don Eugenio",
+      "email": "contacto@doneugenio.com.ar"
+    },
+    {
+      "name": "Las Invernadas",
+      "email": "lasinvernadas@ciudad.com.ar"
+    },
+    {
+      "name": "Leonar S.R.L.",
+      "email": "info@leonarsrl.com"
+    },
+    {
+      "name": "Lisandro Mogliati",
+      "email": "contacto@licenciadomogliati.com.ar"
+    },
+    {
+      "name": "LR Montajes",
+      "email": "irmontajes@hotmail.com"
+    },
+    {
+      "name": "MAS Aberturas",
+      "email": "masaberturas@outlook.com.ar, mas_aberturas@yahoo.com.ar"
+    },
+    {
+      "name": "Mármoles Turco",
+      "email": "ventas@marmolesturco.com"
+    },
+    {
+      "name": "Materiales Santa Inés",
+      "email": "mat-santaines@speedy.com.ar"
+    },
+    {
+      "name": "MC Perforaciones",
+      "email": "perforacionesmc@yahoo.com.ar"
+    },
+    {
+      "name": "Methego / Methego Deco",
+      "email": "methegosrl@gmail.com"
+    },
+    {
+      "name": "Microquim",
+      "email": "florenciaparodi@microquim.com"
+    },
+    {
+      "name": "Mi Viejo Pedro",
+      "email": "miviejopedro@hotmail.com"
+    },
+    {
+      "name": "Municipalidad de Pergamino",
+      "email": "informes@pergamino.gob.ar, sebastian.selva@pergamino.gob.ar, Producción@pergamino.gob.ar"
+    },
+    {
+      "name": "Opinion Plaza",
+      "email": "gapesteguia@bbt11.com.ar"
+    },
+    {
+      "name": "OSDE",
+      "email": "pergamino@osde.com.ar"
+    },
+    {
+      "name": "Osenic S.A.",
+      "email": "osenicsa.premoldeados@gmail.com"
+    },
+    {
+      "name": "Paco Luz",
+      "email": "santiagomatija@hotmail.com"
+    },
+    {
+      "name": "Piazza San Marco",
+      "email": "piazzasanmarco@speedy.com.ar"
+    },
+    {
+      "name": "Por Más Organización",
+      "email": "vladimiriomiguel@gmail.com"
+    },
+    {
+      "name": "Postales del Mundo",
+      "email": "info@postalesdelmundoviajes.com"
+    },
+    {
+      "name": "Presoleo S.A.",
+      "email": "presoleosa@gmail.com"
+    },
+    {
+      "name": "Proyecto Fénix / Cámara de Comercio Italiana",
+      "email": "fenix@cciargentina.org.ar"
+    },
+    {
+      "name": "Pampero (Sede, Tienda Online y Franquicias)",
+      "email": "info@pampero.com.ar, pamperopeatonalflorida@gmail.com, pamperojuncal@gmail.com, pamperobarrionorte@gmail.com, pamperoloyola@gmail.com, paternal@gmail.com, pamperosanmiguel@gmail.com, pilar@pampero.com.ar, lujanbue@pampero.com.ar, pamperocapilla@gmail.com, pamperozarate@gmail.com, pamperoareco@gmail.com, pamperochivilcoy@gmail.com, pamperosanpedro@mail.com, pamperogualeguay@gmail.com, pampero25demayo@gmail.com, Pamperochacabuco@gmail.com, pamperodosmedios@hotmail.com, pamperobragado@gmail.com, pamperodolores@gmail.com, pamperopergamino@hotmail.com, pamperosannicolas@gmail.com, rojasba@pampero.com.ar, pamperojunin24@gmail.com, pampero9dejulio@gmail.com, pamperocolon@hotmail.com, pampero.rosario@hotmail.com, pamperorosario@gmail.com, olavarria@pampero.com.ar, pamperooficialtandil@gmail.com, canadasf@pampero.com.ar, comercial@pamperovenado.com.ar, ranquel@pampero.com.ar, ventas@pamperoconcordia.com.ar, Paranaer@pampero.com.ar, pamperoeltrebol@gmail.com, pamperosudestebsas@gmail.com, rufinosf@pampero.com.ar, administracion@donlalo.com.ar, pamperotlod@gmail.com, pamperoesperanza@gmail.com, villegasba@pampero.com.ar, sanjorgesf@pampero.com.ar, latiendass@latiendass.com, pamperotresarroyos@gmail.com, pamperorafaela@gmail.com, pamperocarhue@gmail.com, Pamperosanfrancisco@gmail.com, jesica.soto@hotmail.com, pamperocuruzu@gmail.com, Huincagro@huincacoop.com, pamperomorteros@gmail.com, castexlp@pampero.com.ar, administracion@pamperobahia.com.ar, textilmediterraneasrl@gmail.com, pamperosg@gmail.com, pamperosantarosa@gmail.com, riotercerocor@pampero.com.ar, pamperomercedescorrientes@gmail.com, goyaco@pampero.com.ar, Pampero.rqta@gmail.com, pampero.fcordoba@gmail.com, cordoba@pampenorte.com.ar, villamercedessl@pampero.com.ar, merlosl@pampero.com.ar, lacumbre@pampero.com.ar, sanluis@pampero.com.ar, pamperoviedma@gmail.com, pamperova@gmail.com, misiones@pampero.com.ar, ventas@gutti.com.ar, pampero.charata@hotmail.com, sp.pampero@gmail.com, pamperosanmartin@gmail.com, pamperosanrafael@gmail.com, pamperofsa@gmail.com, pamperosantiagodelestero@gmail.com, lorcasas24@gmail.com, Lorcasas24@gmail.com, ventas@pamperomaipu.com.ar, estebanquintana@shopal.com.ar, sspilere@hotmail.com, pamperosanjuan@gmail.com, grupomgo.srl@gmail.com, puertomadryn@pampero.com.ar, Pamperolules.tuc@gmail.com, matiasra@pampenorte.com.ar, salta@pampero.com.ar, ventas@pamperopatagonia.com.ar, jujuypampero@gmail.com, bariloche@pamperopatagonia.com.ar, elabuelosrl@gmail.com, malalcume@hotmail.com, pamperocomodoro@gmail.com, pamperocalafate@gmail.com, pamperoriogallegos@gmail.com, pampero@grupogenerartdf.com"
+    },
+    {
+      "name": "Raesa",
+      "email": "raesa@ciudad.com.ar"
+    },
+    {
+      "name": "Rayita",
+      "email": "broches-rayita@hotmail.com"
+    },
+    {
+      "name": "Serbal Montajes / Claudio Balmaceda",
+      "email": "tallersebal@gmail.com"
+    },
+    {
+      "name": "Sillas Castellano",
+      "email": "sillascastellano@hotmail.com"
+    },
+    {
+      "name": "Sur Audio",
+      "email": "suraudiogabinetes@hotmail.com"
+    },
+    {
+      "name": "Tanques Fangio",
+      "email": "tfangio@infovia.com.ar"
+    },
+    {
+      "name": "Textil Parque (PTP S.A.)",
+      "email": "comercial@ptpsa.com.ar"
+    },
+    {
+      "name": "Transervi / Jorge y Matías Basualdo",
+      "email": "basualdojorge@gmail.com, basualdomatias09@gmail.com"
+    },
+    {
+      "name": "Vacrom S.A.",
+      "email": "info@zanocco.com.ar"
+    }
+  ],
+  "Gastronomía": [
+    {
+      "name": "Gia Catering",
+      "email": "info@giacatering.com.ar"
     }
   ]
 };

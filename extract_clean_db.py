@@ -3,7 +3,7 @@ import json
 import urllib.parse
 import sys
 
-excel_path = r"C:\Users\drive\Downloads\Base_Pergamino_Winktact.xlsx"
+excel_path = r"C:\Users\drive\Downloads\Base_Pergamino_Winktact_Actualizada.xlsx"
 
 try:
     wb = openpyxl.load_workbook(excel_path, data_only=True)
