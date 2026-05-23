@@ -3,61 +3,73 @@ const LOCAL_BUSINESS_DB = {
   "Cafetería": [
     {
       "name": "Sandwichería Avenida",
-      "email": "sandwicheriaavenida@hotmail.com"
+      "email": "sandwicheriaavenida@hotmail.com",
+      "instagram": "sandwicheria_avenida"
     }
   ],
   "Supermercado": [
     {
       "name": "Muy Barato",
-      "email": "nogoya@muybaratomayorista.com.ar"
+      "email": "nogoya@muybaratomayorista.com.ar",
+      "instagram": "muybaratomayorista"
     }
   ],
   "Carnicería": [
     {
       "name": "Porquissimo Pergamino",
-      "email": "info@porquissimo.com"
+      "email": "info@porquissimo.com",
+      "instagram": "porquissimopergamino"
     }
   ],
   "Ferretería": [
     {
       "name": "Ferretería Illia",
-      "email": "ferreteriaillia@hotmail.com"
+      "email": "ferreteriaillia@hotmail.com",
+      "instagram": "ferreteriaillia"
     },
     {
       "name": "Dincor Pergamino Mayorista Ferretero",
-      "email": "dincorpergamino@gmail.com"
+      "email": "dincorpergamino@gmail.com",
+      "instagram": "dincorpergamino"
     },
     {
       "name": "Construfer Pergamino",
-      "email": "construferpergamino@live.com.ar"
+      "email": "construferpergamino@live.com.ar",
+      "instagram": "construfer"
     },
     {
       "name": "Ferretería Centenario",
-      "email": "ferreteriacentenario@speedy.com.ar"
+      "email": "ferreteriacentenario@speedy.com.ar",
+      "instagram": "ferreteriacentenario"
     },
     {
       "name": "Ferretería Pergamino",
-      "email": "oscarandrieux@hotmail.com"
+      "email": "oscarandrieux@hotmail.com",
+      "instagram": "ferreteria_pergamino"
     }
   ],
   "Corralón de Materiales": [
     {
       "name": "Materiales De Construcción Ferraris",
-      "email": "administracion@materialesferraris.com.ar"
+      "email": "administracion@materialesferraris.com.ar",
+      "instagram": "corralonferraris"
     },
     {
       "name": "Hierromad Hierros Y Corralón",
-      "email": "hierromad@wiscom.com.ar"
+      "email": "hierromad@wiscom.com.ar",
+      "instagram": "hierromad"
     }
   ],
   "Sanitarios": [
     {
       "name": "Casa Foster",
-      "email": "cliente@gurusoluciones.com"
+      "email": "cliente@gurusoluciones.com",
+      "instagram": "casafoster"
     },
     {
       "name": "Lenzi :: Pergamino",
-      "email": "info@marmolerialenzi.com.ar"
+      "email": "info@marmolerialenzi.com.ar",
+      "instagram": "marmolerialenzi"
     }
   ],
   "Electricidad": [
@@ -963,6 +975,14 @@ const userEmailInput = document.getElementById("userEmail");
 const userPasswordInput = document.getElementById("userPassword");
 const emailSubjectInput = document.getElementById("emailSubject");
 const emailBodyInput = document.getElementById("emailBody");
+const instagramBodyInput = document.getElementById("instagramBody");
+const richEmailBody = document.getElementById("richEmailBody");
+const tabBtnEmail = document.getElementById("tabBtnEmail");
+const tabBtnInstagram = document.getElementById("tabBtnInstagram");
+const tabContentEmail = document.getElementById("tabContentEmail");
+const tabContentInstagram = document.getElementById("tabContentInstagram");
+const previewGmailContainer = document.getElementById("previewGmailContainer");
+const previewInstagramContainer = document.getElementById("previewInstagramContainer");
 const campaignLimitInput = document.getElementById("campaignLimit");
 const spamWarningBox = document.getElementById("spamWarningBox");
 
@@ -1120,6 +1140,36 @@ function loginSuccess(name, email) {
   appendLog(`[OK] Sesión iniciada con éxito. Correo verificado: ${email}`, "success");
 }
 
+// --- FUNCIONES GLOBALES PARA CONTROL DE SPAM Y HISTORIAL ---
+function getSentHistory() {
+  try {
+    return JSON.parse(localStorage.getItem("winktact_sent_history")) || [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function checkSentHistory(name) {
+  const history = getSentHistory();
+  // Buscar si se contactó en los últimos 30 días
+  const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+  return history.find(record => record.name.toLowerCase() === name.toLowerCase() && record.timestamp > thirtyDaysAgo);
+}
+
+function addToSentHistory(name, contactInfo) {
+  const history = getSentHistory();
+  // Remover entradas anteriores de la misma empresa para evitar crecimiento infinito
+  const filteredHistory = history.filter(record => record.name.toLowerCase() !== name.toLowerCase());
+  filteredHistory.push({
+    name: name,
+    contact: contactInfo,
+    timestamp: Date.now()
+  });
+  localStorage.setItem("winktact_sent_history", JSON.stringify(filteredHistory));
+}
+
+let updatePreviews = function() {};
+
 // Escuchar cambios para cargar sesión previa y estado de pago
 window.addEventListener("DOMContentLoaded", () => {
   const cachedName = sessionStorage.getItem("winktact_username");
@@ -1182,10 +1232,292 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   if (channelEmail && channelInstagram) {
-    channelEmail.addEventListener("change", toggleChannelUI);
-    channelInstagram.addEventListener("change", toggleChannelUI);
+    channelEmail.addEventListener("change", () => {
+      toggleChannelUI();
+      saveToLocalStorage();
+      updatePreviews();
+    });
+    channelInstagram.addEventListener("change", () => {
+      toggleChannelUI();
+      saveToLocalStorage();
+      updatePreviews();
+    });
     toggleChannelUI();
   }
+
+  // --- MEJORAS FASE 1: UI/UX, EDITORES, AUTO-SAVE Y HISTORIAL ---
+  
+  // 1. Manejo de Pestañas de Redacción (Email vs Instagram)
+  if (tabBtnEmail && tabBtnInstagram) {
+    tabBtnEmail.addEventListener("click", () => {
+      tabBtnEmail.classList.add("active");
+      tabBtnInstagram.classList.remove("active");
+      
+      tabBtnEmail.style.color = "var(--accent-color)";
+      tabBtnEmail.style.borderBottom = "2px solid var(--accent-color)";
+      tabBtnEmail.style.fontWeight = "700";
+      
+      tabBtnInstagram.style.color = "var(--text-secondary)";
+      tabBtnInstagram.style.borderBottom = "none";
+      tabBtnInstagram.style.fontWeight = "600";
+      
+      if (tabContentEmail) tabContentEmail.style.display = "block";
+      if (tabContentInstagram) tabContentInstagram.style.display = "none";
+      
+      if (previewGmailContainer) previewGmailContainer.style.display = "block";
+      if (previewInstagramContainer) previewInstagramContainer.style.display = "none";
+    });
+
+    tabBtnInstagram.addEventListener("click", () => {
+      tabBtnInstagram.classList.add("active");
+      tabBtnEmail.classList.remove("active");
+      
+      tabBtnInstagram.style.color = "var(--accent-color)";
+      tabBtnInstagram.style.borderBottom = "2px solid var(--accent-color)";
+      tabBtnInstagram.style.fontWeight = "700";
+      
+      tabBtnEmail.style.color = "var(--text-secondary)";
+      tabBtnEmail.style.borderBottom = "none";
+      tabBtnEmail.style.fontWeight = "600";
+      
+      if (tabContentEmail) tabContentEmail.style.display = "none";
+      if (tabContentInstagram) tabContentInstagram.style.display = "block";
+      
+      if (previewGmailContainer) previewGmailContainer.style.display = "none";
+      if (previewInstagramContainer) previewInstagramContainer.style.display = "flex";
+    });
+  }
+
+  // 2. Editor WYSIWYG minimalista nativo
+  const toolbarButtons = document.querySelectorAll(".wysiwyg-toolbar .toolbar-btn");
+  if (toolbarButtons && richEmailBody) {
+    toolbarButtons.forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        const command = btn.getAttribute("data-command");
+        document.execCommand(command, false, null);
+        richEmailBody.focus();
+        updateEmailBodyFromRich();
+      });
+    });
+
+    richEmailBody.addEventListener("input", () => {
+      updateEmailBodyFromRich();
+    });
+  }
+
+  function updateEmailBodyFromRich() {
+    if (emailBodyInput && richEmailBody) {
+      emailBodyInput.value = richEmailBody.innerHTML;
+      saveToLocalStorage();
+      updatePreviews();
+    }
+  }
+
+  // 3. Previsualizador Dinámico en Tiempo Real
+  updatePreviews = function() {
+    const candidateName = userNameInput.value.trim() || "[Tu Nombre]";
+    
+    // Asunto Email
+    if (emailSubjectInput) {
+      const subjectVal = emailSubjectInput.value;
+      const previewSubject = subjectVal
+        .replace(/{nombre_empresa}/g, "Empresa Destino")
+        .replace(/{nombre_candidato}/g, candidateName);
+      const previewSubjectEl = document.getElementById("previewEmailSubject");
+      if (previewSubjectEl) {
+        previewSubjectEl.innerText = previewSubject || "[Asunto del Correo]";
+      }
+    }
+
+    // Cuerpo Email (HTML)
+    if (richEmailBody) {
+      const bodyHtml = richEmailBody.innerHTML;
+      const previewBody = bodyHtml
+        .replace(/{nombre_empresa}/g, '<strong style="color: var(--accent-color);">Empresa Destino</strong>')
+        .replace(/{nombre_candidato}/g, `<strong>${candidateName}</strong>`);
+      const previewBodyEl = document.getElementById("previewEmailBody");
+      if (previewBodyEl) {
+        previewBodyEl.innerHTML = previewBody || "[Cuerpo del Mensaje]";
+      }
+    }
+
+    // Cuerpo Instagram
+    if (instagramBodyInput) {
+      const igVal = instagramBodyInput.value;
+      const previewIg = igVal
+        .replace(/{nombre_empresa}/g, "Empresa Destino")
+        .replace(/{nombre_candidato}/g, candidateName);
+      const previewIgEl = document.getElementById("previewIgBody");
+      if (previewIgEl) {
+        previewIgEl.innerText = previewIg || "[Mensaje para Instagram Direct]";
+      }
+    }
+
+    // Nombre Adjunto
+    const previewAttachedFileName = document.getElementById("previewAttachedFileName");
+    const previewAttachmentWrapper = document.getElementById("previewAttachmentWrapper");
+    if (previewAttachedFileName && previewAttachmentWrapper) {
+      if (selectedFile) {
+        previewAttachedFileName.innerText = `${selectedFile.name} (${(selectedFile.size / 1024 / 1024).toFixed(2)} MB)`;
+        previewAttachmentWrapper.style.display = "inline-flex";
+      } else {
+        previewAttachmentWrapper.style.display = "none";
+      }
+    }
+  };
+
+  // 4. Auto-save (Guardar progreso en localStorage)
+  function saveToLocalStorage() {
+    localStorage.setItem("winktact_userName", userNameInput.value);
+    localStorage.setItem("winktact_userEmail", userEmailInput.value);
+    localStorage.setItem("winktact_userPassword", userPasswordInput.value);
+    
+    if (emailSubjectInput) localStorage.setItem("winktact_emailSubject", emailSubjectInput.value);
+    if (emailBodyInput) localStorage.setItem("winktact_emailBody", emailBodyInput.value);
+    if (richEmailBody) localStorage.setItem("winktact_richEmailBody", richEmailBody.innerHTML);
+    if (instagramBodyInput) localStorage.setItem("winktact_instagramBody", instagramBodyInput.value);
+    if (campaignLimitInput) localStorage.setItem("winktact_campaignLimit", campaignLimitInput.value);
+    
+    const isIg = channelInstagram && channelInstagram.checked;
+    localStorage.setItem("winktact_channel", isIg ? "instagram" : "email");
+
+    const cityInput = document.getElementById("businessCity");
+    if (cityInput) localStorage.setItem("winktact_city", cityInput.value);
+    
+    const selectedRubros = getSelectedRubros();
+    localStorage.setItem("winktact_selected_rubros", JSON.stringify(selectedRubros));
+  }
+
+  // 5. Restaurar Progreso desde localStorage (Auto-save)
+  function loadFromLocalStorage() {
+    if (localStorage.getItem("winktact_userName")) {
+      userNameInput.value = localStorage.getItem("winktact_userName");
+    }
+    if (localStorage.getItem("winktact_userEmail")) {
+      userEmailInput.value = localStorage.getItem("winktact_userEmail");
+    }
+    if (localStorage.getItem("winktact_userPassword")) {
+      userPasswordInput.value = localStorage.getItem("winktact_userPassword");
+    }
+    if (emailSubjectInput && localStorage.getItem("winktact_emailSubject")) {
+      emailSubjectInput.value = localStorage.getItem("winktact_emailSubject");
+    }
+    if (emailBodyInput && localStorage.getItem("winktact_emailBody")) {
+      emailBodyInput.value = localStorage.getItem("winktact_emailBody");
+    }
+    if (richEmailBody) {
+      if (localStorage.getItem("winktact_richEmailBody")) {
+        richEmailBody.innerHTML = localStorage.getItem("winktact_richEmailBody");
+      } else if (emailBodyInput && emailBodyInput.value) {
+        richEmailBody.innerHTML = emailBodyInput.value.replace(/\n/g, '<br>');
+      }
+    }
+    if (instagramBodyInput) {
+      if (localStorage.getItem("winktact_instagramBody")) {
+        instagramBodyInput.value = localStorage.getItem("winktact_instagramBody");
+      } else {
+        instagramBodyInput.value = `¡Hola {nombre_empresa}! 👋 Te contacto porque me gustaría mucho sumarme a su equipo. Les dejo mi currículum adjunto por email o podemos conversar por acá. ¡Muchas gracias! 😊 - {nombre_candidato}`;
+      }
+    }
+    if (campaignLimitInput && localStorage.getItem("winktact_campaignLimit")) {
+      campaignLimitInput.value = localStorage.getItem("winktact_campaignLimit");
+      updateSpamWarning();
+    }
+    
+    const savedChannel = localStorage.getItem("winktact_channel");
+    if (savedChannel === "instagram") {
+      if (channelInstagram) {
+        channelInstagram.checked = true;
+        if (channelEmail) channelEmail.checked = false;
+      }
+    } else {
+      if (channelEmail) {
+        channelEmail.checked = true;
+        if (channelInstagram) channelInstagram.checked = false;
+      }
+    }
+    toggleChannelUI();
+
+    const savedCity = localStorage.getItem("winktact_city");
+    const cityInput = document.getElementById("businessCity");
+    if (savedCity && cityInput) {
+      cityInput.value = savedCity;
+    }
+
+    const savedRubrosStr = localStorage.getItem("winktact_selected_rubros");
+    if (savedRubrosStr) {
+      try {
+        const savedRubros = JSON.parse(savedRubrosStr);
+        const rubroCheckboxes = document.querySelectorAll(".rubro-checkbox");
+        rubroCheckboxes.forEach(cb => {
+          cb.checked = savedRubros.includes(cb.value);
+        });
+      } catch (e) {
+        console.error("Error loading selected rubros:", e);
+      }
+    }
+
+    // Restaurar PDF si está guardado en localStorage
+    const savedPdfName = localStorage.getItem("winktact_pdf_name");
+    const savedPdfBase64 = localStorage.getItem("winktact_pdf_base64");
+    if (savedPdfName && savedPdfBase64) {
+      try {
+        const byteCharacters = atob(savedPdfBase64.split(',')[1]);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], {type: 'application/pdf'});
+        selectedFile = new File([blob], savedPdfName, {type: 'application/pdf'});
+        
+        const dropZoneText = document.getElementById("dropZoneText");
+        const fileNameDisplay = document.getElementById("fileNameDisplay");
+        const attachedFileName = document.getElementById("attachedFileName");
+        if (dropZoneText && fileNameDisplay && attachedFileName) {
+          dropZoneText.style.display = "none";
+          attachedFileName.innerHTML = `CV Adjunto: <strong>${savedPdfName}</strong><br><small style="color: var(--success-color);">Cambiar de archivo</small>`;
+          fileNameDisplay.innerText = `Archivo cargado exitosamente: ${savedPdfName}`;
+          fileNameDisplay.style.display = "block";
+        }
+      } catch (e) {
+        console.error("Error recuperando PDF desde localStorage:", e);
+      }
+    }
+    
+    updatePreviews();
+  }
+
+  // Escuchar inputs para auto-guardar
+  const autoSaveInputs = [
+    userNameInput,
+    userEmailInput,
+    userPasswordInput,
+    emailSubjectInput,
+    instagramBodyInput,
+    campaignLimitInput
+  ];
+  autoSaveInputs.forEach(el => {
+    if (el) {
+      el.addEventListener("input", () => {
+        saveToLocalStorage();
+        updatePreviews();
+      });
+      el.addEventListener("change", () => {
+        saveToLocalStorage();
+        updatePreviews();
+      });
+    }
+  });
+
+  const businessCityEl = document.getElementById("businessCity");
+  if (businessCityEl) {
+    businessCityEl.addEventListener("input", saveToLocalStorage);
+  }
+
+  // Restaurar estado al iniciar
+  loadFromLocalStorage();
 });
 
 // Botón para aplicar Client ID real
@@ -1937,6 +2269,15 @@ cvFileInput.addEventListener("change", (e) => {
     fileNameDisplay.innerText = `Archivo cargado exitosamente: ${file.name}`;
     fileNameDisplay.style.display = "block";
     
+    // Auto-guardar archivo PDF en localStorage
+    fileToBase64(file).then(base64 => {
+      localStorage.setItem("winktact_pdf_base64", base64);
+      localStorage.setItem("winktact_pdf_name", file.name);
+      if (typeof updatePreviews === "function") {
+        updatePreviews();
+      }
+    }).catch(err => console.error("Error al guardar CV en localStorage:", err));
+
     // Actualizar botones de navegación si estamos en el Paso 3
     updatePaymentUI();
   }
@@ -2117,6 +2458,24 @@ async function startCampaign() {
     }
 
     const business = businesses[currentIndex];
+
+    // CONTROL DE SPAM / DUPLICADOS LOCAL
+    const sentRecord = checkSentHistory(business.name);
+    if (sentRecord) {
+      const daysAgo = Math.round((Date.now() - sentRecord.timestamp) / (1000 * 60 * 60 * 24));
+      const timeText = daysAgo === 0 ? "hoy" : `hace ${daysAgo} días`;
+      const confirmSkip = confirm(`A "${business.name}" ya le enviaste tu CV ${timeText}.\n¿Quieres saltarla para evitar duplicados?`);
+      if (confirmSkip) {
+        appendLog(`[OMITIDO] Se saltó ${business.name} (ya contactado ${timeText}).`, "warning");
+        currentIndex++;
+        statSent.innerText = currentIndex;
+        statRemaining.innerText = businesses.length - currentIndex;
+        sendingProgressBar.style.width = `${(currentIndex / businesses.length) * 100}%`;
+        setTimeout(processNext, 500);
+        return;
+      }
+    }
+
     const parsedSubject = emailSubjectInput.value.replace(/{nombre_empresa}/g, business.name);
     const parsedBody = emailBodyInput.value
       .replace(/{nombre_empresa}/g, business.name)
@@ -2178,6 +2537,9 @@ async function startCampaign() {
         // Registrar que el pago ha sido verificado con éxito en el servidor
         localStorage.setItem("winktact_paid", "true");
         
+        // Registrar envío en historial
+        addToSentHistory(business.name, business.email);
+        
         completeStep();
       }
 
@@ -2202,6 +2564,10 @@ async function startCampaign() {
         
         setTimeout(() => {
           appendLog(`[OK SIMULADO] Correo simulado enviado a ${business.email}`, "success");
+          
+          // Registrar envío simulado en historial
+          addToSentHistory(business.name, business.email);
+          
           completeStep();
         }, 800);
       }, 700);
@@ -2264,7 +2630,21 @@ function showNextInstagramBusiness() {
   }
 
   const business = instagramCampaignBusinesses[currentInstagramCampaignIndex];
-  
+
+  // CONTROL DE SPAM / DUPLICADOS LOCAL
+  const sentRecord = checkSentHistory(business.name);
+  if (sentRecord) {
+    const daysAgo = Math.round((Date.now() - sentRecord.timestamp) / (1000 * 60 * 60 * 24));
+    const timeText = daysAgo === 0 ? "hoy" : `hace ${daysAgo} días`;
+    const confirmSkip = confirm(`A "${business.name}" ya le enviaste tu CV ${timeText}.\n¿Quieres saltarla para evitar duplicados?`);
+    if (confirmSkip) {
+      appendLog(`[OMITIDO] Se saltó ${business.name} (ya contactado ${timeText}).`, "warning");
+      currentInstagramCampaignIndex++;
+      showNextInstagramBusiness();
+      return;
+    }
+  }
+
   let handle = "";
   if (business.instagram) {
     handle = `@${business.instagram}`;
@@ -2298,7 +2678,9 @@ if (btnIgAction) {
     if (!isSending) return;
 
     const business = instagramCampaignBusinesses[currentInstagramCampaignIndex];
-    const parsedBody = emailBodyInput.value
+    
+    // Usar la plantilla de Instagram Direct
+    const parsedBody = (instagramBodyInput ? instagramBodyInput.value : emailBodyInput.value)
       .replace(/{nombre_empresa}/g, business.name)
       .replace(/{nombre_candidato}/g, userNameInput.value);
 
@@ -2340,6 +2722,9 @@ if (btnIgAction) {
 
     appendLog(`[📸 INSTAGRAM] Abriendo perfil de ${business.name}: ${igUrl}`, "success");
     
+    // Registrar el envío en el historial local
+    addToSentHistory(business.name, business.instagram || business.name);
+
     // Avanzar al siguiente paso
     currentInstagramCampaignIndex++;
     showNextInstagramBusiness();

@@ -114,7 +114,8 @@ exports.handler = async (event, context) => {
       from: `"${senderName}" <${senderEmail}>`,
       to: recipientEmail,
       subject: subject,
-      text: emailBody,
+      text: emailBody.replace(/<[^>]*>/g, ""), // simple strip tags as fallback
+      html: emailBody,
       attachments: [
         {
           filename: cvFile.name || "Curriculum_Vitae.pdf",

@@ -320,20 +320,128 @@
         </div>
       </div>
 
-      <div class="form-group">
-        <label for="emailSubject">Asunto del Correo</label>
-        <input type="text" id="emailSubject" placeholder="Ej: CV - Candidatura espontánea - {nombre_empresa}" required>
-        <small style="color: var(--text-secondary); display: block; margin-top: 0.35rem; font-size: 0.8rem;">
-          💡 Puedes usar la variable <strong>{nombre_empresa}</strong> para personalizar el asunto automáticamente.
-        </small>
+      <!-- Pestañas de Redacción de Mensajes -->
+      <div style="margin-top: 1.5rem;">
+        <label style="font-weight: 700; color: var(--accent-color); margin-bottom: 0.75rem; display: block; text-align: left;">Redacción de las Plantillas</label>
+        
+        <!-- Botones de pestaña -->
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.5rem;">
+          <button type="button" class="tab-btn active" id="tabBtnEmail" style="padding: 0.5rem 1rem; background: none; border: none; color: var(--accent-color); border-bottom: 2px solid var(--accent-color); font-weight: 700; cursor: pointer; font-size: 0.9rem; outline: none;">
+            📧 Plantilla de Email
+          </button>
+          <button type="button" class="tab-btn" id="tabBtnInstagram" style="padding: 0.5rem 1rem; background: none; border: none; color: var(--text-secondary); font-weight: 600; cursor: pointer; font-size: 0.9rem; outline: none;">
+            📸 Plantilla de Instagram
+          </button>
+        </div>
+
+        <!-- Contenido Pestaña Email -->
+        <div id="tabContentEmail" class="tab-pane active">
+          <div class="form-group">
+            <label for="emailSubject" style="text-align: left; display: block;">Asunto del Correo</label>
+            <input type="text" id="emailSubject" placeholder="Ej: CV - Candidatura espontánea - {nombre_empresa}">
+            <small style="color: var(--text-secondary); display: block; margin-top: 0.35rem; font-size: 0.8rem; text-align: left;">
+              💡 Puedes usar la variable <strong>{nombre_empresa}</strong> para personalizar el asunto automáticamente.
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label style="text-align: left; display: block;">Cuerpo del Correo (Formato Enriquecido)</label>
+            <!-- Controles del editor enriquecido -->
+            <div class="wysiwyg-toolbar" style="display: flex; gap: 0.25rem; background: rgba(17, 24, 39, 0.9); border: 1px solid rgba(255,255,255,0.1); border-bottom: none; border-top-left-radius: 8px; border-top-right-radius: 8px; padding: 0.35rem 0.5rem; align-items: center;">
+              <button type="button" class="toolbar-btn" data-command="bold" title="Negrita" style="background: none; border: none; color: white; cursor: pointer; padding: 0.25rem 0.5rem; font-weight: bold; border-radius: 4px; outline: none;">B</button>
+              <button type="button" class="toolbar-btn" data-command="italic" title="Cursiva" style="background: none; border: none; color: white; cursor: pointer; padding: 0.25rem 0.5rem; font-style: italic; border-radius: 4px; outline: none;">I</button>
+              <button type="button" class="toolbar-btn" data-command="underline" title="Subrayado" style="background: none; border: none; color: white; cursor: pointer; padding: 0.25rem 0.5rem; text-decoration: underline; border-radius: 4px; outline: none;">U</button>
+              <span style="border-left: 1px solid rgba(255,255,255,0.15); height: 16px; margin: 0 0.25rem;"></span>
+              <button type="button" class="toolbar-btn" data-command="insertUnorderedList" title="Lista de Viñetas" style="background: none; border: none; color: white; cursor: pointer; padding: 0.25rem 0.5rem; border-radius: 4px; outline: none;">• List</button>
+            </div>
+            <!-- Div Content Editable para el editor enriquecido -->
+            <div id="richEmailBody" contenteditable="true" style="min-height: 180px; padding: 1rem; background: rgba(17, 24, 39, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); border-top: none; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; color: var(--text-primary); font-size: 0.95rem; outline: none; line-height: 1.5; text-align: left; overflow-y: auto;"></div>
+            <!-- Input oculto para mapear a los scripts existentes si fuera necesario -->
+            <textarea id="emailBody" style="display: none;"></textarea>
+            
+            <small style="color: var(--text-secondary); display: block; margin-top: 0.35rem; font-size: 0.8rem; text-align: left;">
+              💡 Las variables <strong>{nombre_empresa}</strong> y <strong>{nombre_candidato}</strong> se reemplazarán solas.
+            </small>
+          </div>
+        </div>
+
+        <!-- Contenido Pestaña Instagram -->
+        <div id="tabContentInstagram" class="tab-pane" style="display: none;">
+          <div class="form-group">
+            <label for="instagramBody" style="text-align: left; display: block;">Mensaje para Instagram Direct (Texto Plano + Emojis)</label>
+            <textarea id="instagramBody" rows="7" placeholder="Ej: Hola {nombre_empresa}! Vi tu búsqueda y me interesa mucho contactarte... 🚀" style="width: 100%; padding: 0.85rem 1rem; background: rgba(17, 24, 39, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: var(--text-primary); line-height: 1.4; outline: none; text-align: left;"></textarea>
+            <small style="color: var(--text-secondary); display: block; margin-top: 0.35rem; font-size: 0.8rem; text-align: left;">
+              💡 Las variables <strong>{nombre_empresa}</strong> y <strong>{nombre_candidato}</strong> se reemplazarán automáticamente.
+            </small>
+          </div>
+        </div>
       </div>
 
-      <div class="form-group">
-        <label for="emailBody">Cuerpo del Mensaje</label>
-        <textarea id="emailBody" rows="5" placeholder="Escribe tu carta de presentación aquí..." required></textarea>
-        <small style="color: var(--text-secondary); display: block; margin-top: 0.35rem; font-size: 0.8rem;">
-          💡 Las variables <strong>{nombre_empresa}</strong> y <strong>{nombre_candidato}</strong> se reemplazarán solas con los datos reales al enviar cada correo.
-        </small>
+      <!-- Previsualizador Dinámico Interactivo -->
+      <div style="margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1.5rem;">
+        <label style="font-weight: 700; color: var(--accent-color); margin-bottom: 1rem; display: block; text-align: left;">
+          👀 Previsualización en Tiempo Real
+        </label>
+        
+        <!-- Simulador de Gmail (Se muestra en pestaña Email) -->
+        <div id="previewGmailContainer" style="background: #1e1e1e; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.3); text-align: left; display: block;">
+          <!-- Barra superior Gmail -->
+          <div style="background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.08); padding: 0.6rem 1rem; font-size: 0.8rem; display: flex; align-items: center; justify-content: space-between; color: var(--text-secondary);">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #fc5753;"></span>
+              <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #fdbc40;"></span>
+              <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #33c748;"></span>
+              <span style="margin-left: 0.5rem; font-weight: 500;">Bandeja de Salida (Gmail)</span>
+            </div>
+            <span>Para: rrhh@empresa.com</span>
+          </div>
+          <!-- Contenido email -->
+          <div style="padding: 1rem; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+            <div style="font-size: 0.9rem; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.5rem; margin-bottom: 0.75rem; color: var(--text-primary);">
+              Asunto: <span id="previewEmailSubject" style="font-weight: normal; color: var(--text-secondary);">[Asunto del Correo]</span>
+            </div>
+            <div id="previewEmailBody" style="font-size: 0.85rem; color: #d1d5db; line-height: 1.5; min-height: 120px; word-break: break-word;">
+              [Cuerpo del Mensaje]
+            </div>
+            <!-- Adjunto simulado -->
+            <div id="previewAttachmentWrapper" style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 0.4rem 0.75rem; margin-top: 1rem; font-size: 0.75rem; color: #a855f7;">
+              <span>📄</span>
+              <span id="previewAttachedFileName">Curriculum_Vitae.pdf (PDF)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Simulador de Celular de Instagram (Se muestra en pestaña Instagram) -->
+        <div id="previewInstagramContainer" style="display: none; max-width: 320px; margin: 0 auto; background: #000; border: 4px solid #333; border-radius: 36px; overflow: hidden; box-shadow: 0 8px 25px rgba(0,0,0,0.5); text-align: left; aspect-ratio: 9/16; flex-direction: column;">
+          <!-- Barra superior del celular -->
+          <div style="background: #111; padding: 0.8rem 1rem 0.4rem 1rem; font-size: 0.75rem; display: flex; justify-content: space-between; align-items: center; color: white; border-bottom: 1px solid #222;">
+            <span style="font-weight: bold;">09:41</span>
+            <div style="display: flex; gap: 0.25rem;">
+              <span>📶</span>
+              <span>🔋</span>
+            </div>
+          </div>
+          <!-- Cabecera chat Instagram -->
+          <div style="padding: 0.75rem 1rem; display: flex; align-items: center; gap: 0.75rem; border-bottom: 1px solid #222; background: #000;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #833ab4 0%, #fd1d1d 50%, #fcb045 100%); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; color: white;">E</div>
+            <div>
+              <div style="font-size: 0.85rem; font-weight: bold; color: white;">Empresa Destino</div>
+              <div style="font-size: 0.65rem; color: #aaa;">Activo ahora</div>
+            </div>
+          </div>
+          <!-- Cuerpo del chat -->
+          <div style="flex-grow: 1; padding: 1rem; background: #000; overflow-y: auto; display: flex; flex-direction: column; justify-content: flex-end; min-height: 200px;">
+            <!-- Burbuja de mensaje enviado -->
+            <div style="align-self: flex-end; background: #3797f0; color: white; padding: 0.6rem 0.9rem; border-radius: 18px; border-bottom-right-radius: 4px; max-width: 85%; font-size: 0.80rem; line-height: 1.4; word-break: break-word; white-space: pre-wrap;" id="previewIgBody">
+              [Mensaje para Instagram Direct]
+            </div>
+          </div>
+          <!-- Barra de entrada de texto del chat -->
+          <div style="padding: 0.75rem 1rem; border-top: 1px solid #222; background: #111; display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; color: #aaa;">
+            <span>Escribe un mensaje...</span>
+            <span style="font-size: 1.1rem;">📷 🎙️ 🖼️</span>
+          </div>
+        </div>
       </div>
     </div>
 
