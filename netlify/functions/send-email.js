@@ -69,9 +69,18 @@ exports.handler = async (event, context) => {
             // Consultar base de datos
             const { data: profile, error: profileErr } = await supabase
               .from("profiles")
-              .select("paid")
+              .select("paid, suspended")
               .eq("id", user.id)
               .single();
+
+            if (profile && profile.suspended) {
+              console.log(`[CUENTA SUSPENDIDA] El usuario ${user.email} está suspendido. Bloqueando envío.`);
+              return {
+                statusCode: 403,
+                headers,
+                body: JSON.stringify({ error: "Tu cuenta ha sido suspendida por el administrador. No tienes permitido realizar envíos." })
+              };
+            }
 
             if (!profileErr && profile && profile.paid) {
               userIsPaid = true;

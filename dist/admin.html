@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Winktact — Panel de Administración</title>
+  <link rel="stylesheet" href="index.css">
+  <!-- Cliente oficial de Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body style="background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); min-height: 100vh; color: white; padding: 2rem 1rem; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+
+  <div class="container" id="adminLockScreen" style="max-width: 480px; text-align: center; margin: 5rem auto; display: block; background: rgba(30, 41, 59, 0.7); padding: 3rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    <div style="font-size: 4rem; margin-bottom: 1rem; filter: drop-shadow(0 0 15px rgba(239, 68, 68, 0.4));">🛡️</div>
+    <h1 style="font-size: 1.8rem; margin-bottom: 0.5rem; font-weight: 800;">Verificando Credenciales</h1>
+    <p style="color: var(--text-secondary); margin-bottom: 2rem;">Validando permisos de administrador en la nube...</p>
+    <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.1); border-radius: 50%; border-top-color: var(--accent-color); animation: spin 1s linear infinite;"></div>
+  </div>
+
+  <div class="container" id="adminDashboard" style="max-width: 1000px; display: none; background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 2.5rem; box-shadow: 0 12px 40px rgba(0,0,0,0.4);">
+    <header style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 1.5rem; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <h1 style="font-size: 2rem; background: linear-gradient(135deg, #a855f7 0%, #3b82f6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; text-align: left;">
+          📊 Panel de Administración
+        </h1>
+        <p style="color: var(--text-secondary); font-size: 0.95rem; margin-top: 0.25rem; text-align: left;">Supervisa usuarios, licencias de Mercado Pago y seguridad</p>
+      </div>
+      <div style="display: flex; gap: 0.75rem;">
+        <a href="index.html" class="btn btn-secondary" style="padding: 0.6rem 1.2rem; font-size: 0.85rem; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center;">Volver a la App</a>
+        <button id="btnAdminLogout" class="btn btn-primary" style="padding: 0.6rem 1.2rem; font-size: 0.85rem; border-radius: 8px; background: #ef4444; border: none; cursor: pointer;">Cerrar Sesión</button>
+      </div>
+    </header>
+
+    <!-- Cartas de Métricas -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem;">
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 1.5rem; border-radius: 14px; text-align: left;">
+        <span style="font-size: 2rem;">👥</span>
+        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.5rem; font-weight: 600; text-transform: uppercase;">Total Usuarios</div>
+        <div id="statTotalUsers" style="font-size: 2.2rem; font-weight: 800; color: white; margin-top: 0.25rem;">0</div>
+      </div>
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 1.5rem; border-radius: 14px; text-align: left;">
+        <span style="font-size: 2rem;">💳</span>
+        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.5rem; font-weight: 600; text-transform: uppercase;">Licencias Activas (Pagas)</div>
+        <div id="statPaidUsers" style="font-size: 2.2rem; font-weight: 800; color: #10b981; margin-top: 0.25rem;">0</div>
+      </div>
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 1.5rem; border-radius: 14px; text-align: left;">
+        <span style="font-size: 2rem;">⚠️</span>
+        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.5rem; font-weight: 600; text-transform: uppercase;">Usuarios Suspendidos</div>
+        <div id="statSuspendedUsers" style="font-size: 2.2rem; font-weight: 800; color: #ef4444; margin-top: 0.25rem;">0</div>
+      </div>
+    </div>
+
+    <!-- Sección de Tabla de Usuarios -->
+    <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 14px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.15);">
+      <h3 style="padding: 1.25rem 1.5rem; background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 1.1rem; font-weight: 700; margin: 0; text-align: left;">
+        Lista de Usuarios Registrados
+      </h3>
+      <div style="overflow-x: auto; width: 100%;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+          <thead>
+            <tr style="background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.08);">
+              <th style="padding: 1rem 1.5rem; color: var(--text-secondary); font-weight: 700;">Usuario</th>
+              <th style="padding: 1rem 1.5rem; color: var(--text-secondary); font-weight: 700;">Correo Electrónico</th>
+              <th style="padding: 1rem 1.5rem; color: var(--text-secondary); font-weight: 700;">Licencia</th>
+              <th style="padding: 1rem 1.5rem; color: var(--text-secondary); font-weight: 700;">Estado</th>
+              <th style="padding: 1rem 1.5rem; color: var(--text-secondary); font-weight: 700; text-align: center;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="userTableBody">
+            <!-- Filas dinámicas -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .badge-paid {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .badge-free {
+      background: rgba(156, 163, 175, 0.15);
+      color: #9ca3af;
+      border: 1px solid rgba(156, 163, 175, 0.3);
+    }
+    .badge-active {
+      background: rgba(59, 130, 246, 0.15);
+      color: #3b82f6;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+    .badge-suspended {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .admin-action-btn {
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      border: none;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      outline: none;
+    }
+    .btn-toggle-paid {
+      background: rgba(16, 185, 129, 0.2);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+    .btn-toggle-paid:hover {
+      background: rgba(16, 185, 129, 0.3);
+    }
+    .btn-toggle-unpaid {
+      background: rgba(245, 158, 11, 0.2);
+      color: #f59e0b;
+      border: 1px solid rgba(245, 158, 11, 0.4);
+    }
+    .btn-toggle-unpaid:hover {
+      background: rgba(245, 158, 11, 0.3);
+    }
+    .btn-toggle-ban {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+    .btn-toggle-ban:hover {
+      background: rgba(239, 68, 68, 0.3);
+    }
+    .btn-toggle-unban {
+      background: rgba(59, 130, 246, 0.2);
+      color: #3b82f6;
+      border: 1px solid rgba(59, 130, 246, 0.4);
+    }
+    .btn-toggle-unban:hover {
+      background: rgba(59, 130, 246, 0.3);
+    }
+    table tr {
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      transition: background 0.2s;
+    }
+    table tr:hover {
+      background: rgba(255, 255, 255, 0.01);
+    }
+  </style>
+
+  <script>
+    // Configuración de Supabase
+    const SUPABASE_URL = "https://cssxmqtejlbrsaetybut.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_OKXZ3_RZCPJKfDsaVqEBRw_z0w0N3gs";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const adminLockScreen = document.getElementById("adminLockScreen");
+    const adminDashboard = document.getElementById("adminDashboard");
+    const userTableBody = document.getElementById("userTableBody");
+
+    const statTotalUsers = document.getElementById("statTotalUsers");
+    const statPaidUsers = document.getElementById("statPaidUsers");
+    const statSuspendedUsers = document.getElementById("statSuspendedUsers");
+
+    const btnAdminLogout = document.getElementById("btnAdminLogout");
+
+    let profilesList = [];
+
+    // 1. Verificar sesión de administrador al iniciar
+    async function checkAdminAuth() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        denyAccess("No has iniciado sesión. Redirigiendo al login...");
+        return;
+      }
+
+      // Obtener el perfil para corroborar si es admin
+      const { data: profile, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", session.user.id)
+        .single();
+
+      if (error || !profile || !profile.is_admin) {
+        denyAccess("Acceso denegado. Se requieren permisos de administrador.");
+        return;
+      }
+
+      // Acceso concedido
+      adminLockScreen.style.display = "none";
+      adminDashboard.style.display = "block";
+      
+      // Cargar lista de usuarios
+      await loadUsersData();
+    }
+
+    function denyAccess(message) {
+      alert(message);
+      window.location.href = "index.html";
+    }
+
+    // 2. Cargar todos los usuarios y estadísticas
+    async function loadUsersData() {
+      const { data: profiles, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .order("updated_at", { ascending: false });
+
+      if (error) {
+        alert("Error cargando perfiles de la base de datos: " + error.message);
+        return;
+      }
+
+      profilesList = profiles;
+      renderStats();
+      renderUsersTable();
+    }
+
+    // Calcular estadísticas
+    function renderStats() {
+      const total = profilesList.length;
+      const paid = profilesList.filter(p => p.paid).length;
+      const suspended = profilesList.filter(p => p.suspended).length;
+
+      statTotalUsers.innerText = total;
+      statPaidUsers.innerText = paid;
+      statSuspendedUsers.innerText = suspended;
+    }
+
+    // Renderizar la tabla de usuarios
+    function renderUsersTable() {
+      userTableBody.innerHTML = "";
+
+      if (profilesList.length === 0) {
+        userTableBody.innerHTML = `<tr><td colspan="5" style="padding: 2rem; text-align: center; color: var(--text-secondary);">No hay usuarios registrados aún.</td></tr>`;
+        return;
+      }
+
+      profilesList.forEach(profile => {
+        const row = document.createElement("tr");
+
+        const paidBadge = profile.paid 
+          ? `<span class="badge badge-paid">Premium</span>`
+          : `<span class="badge badge-free">Gratis</span>`;
+
+        const suspendedBadge = profile.suspended
+          ? `<span class="badge badge-suspended">Suspendido</span>`
+          : `<span class="badge badge-active">Activo</span>`;
+
+        // Botones de acción
+        const togglePaidBtn = profile.paid
+          ? `<button class="admin-action-btn btn-toggle-unpaid" onclick="toggleUserPaid('${profile.id}', false)">Desactivar Pago</button>`
+          : `<button class="admin-action-btn btn-toggle-paid" onclick="toggleUserPaid('${profile.id}', true)">Activar Pago</button>`;
+
+        const toggleBanBtn = profile.suspended
+          ? `<button class="admin-action-btn btn-toggle-unban" onclick="toggleUserSuspended('${profile.id}', false)">Desbloquear</button>`
+          : `<button class="admin-action-btn btn-toggle-ban" onclick="toggleUserSuspended('${profile.id}', true)">Suspender</button>`;
+
+        row.innerHTML = `
+          <td style="padding: 1.1rem 1.5rem; font-weight: 600;">
+            ${profile.name}
+            ${profile.is_admin ? '<span style="font-size: 0.7rem; color: #a855f7; margin-left: 0.35rem;">(Admin)</span>' : ''}
+          </td>
+          <td style="padding: 1.1rem 1.5rem; color: #cbd5e1;">${profile.email}</td>
+          <td style="padding: 1.1rem 1.5rem;">${paidBadge} <br><small style="color: #94a3b8; font-size: 0.7rem;">${profile.payment_id || 'Sin ID'}</small></td>
+          <td style="padding: 1.1rem 1.5rem;">${suspendedBadge}</td>
+          <td style="padding: 1.1rem 1.5rem; display: flex; gap: 0.5rem; justify-content: center; align-items: center;">
+            ${togglePaidBtn}
+            ${toggleBanBtn}
+          </td>
+        `;
+
+        userTableBody.appendChild(row);
+      });
+    }
+
+    // Alternar el estado de pago del usuario
+    async function toggleUserPaid(userId, paidState) {
+      const confirmAction = confirm(`¿Estás seguro de que quieres ${paidState ? 'ACTIVAR' : 'DESACTIVAR'} la licencia premium de este usuario?`);
+      if (!confirmAction) return;
+
+      const paymentIdVal = paidState ? `MANUAL-${Date.now()}` : null;
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          paid: paidState,
+          payment_id: paymentIdVal,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", userId);
+
+      if (error) {
+        alert("Error al actualizar estado de pago: " + error.message);
+      } else {
+        await loadUsersData();
+      }
+    }
+
+    // Alternar suspensión del usuario
+    async function toggleUserSuspended(userId, suspendedState) {
+      const confirmAction = confirm(`¿Estás seguro de que deseas ${suspendedState ? 'SUSPENDER (bloquear envíos)' : 'DESBLOQUEAR'} a este usuario?`);
+      if (!confirmAction) return;
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          suspended: suspendedState,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", userId);
+
+      if (error) {
+        alert("Error al actualizar suspensión: " + error.message);
+      } else {
+        await loadUsersData();
+      }
+    }
+
+    // Cerrar Sesión
+    btnAdminLogout.addEventListener("click", async () => {
+      await supabase.auth.signOut();
+      window.location.href = "index.html";
+    });
+
+    // Iniciar verificación
+    window.onload = checkAdminAuth;
+  </script>
+</body>
+</html>
