@@ -43,6 +43,8 @@ exports.handler = async (event, context) => {
 
     // --- VERIFICACIÓN DE PAGO EN SUPABASE (SOCIOS/SAAS) ---
     let userIsPaid = false;
+    let authenticatedUser = null;
+    let supabaseClient = null;
     const authHeader = event.headers.authorization || event.headers.Authorization;
 
     if (authHeader && authHeader.startsWith("Bearer ")) {
@@ -54,7 +56,7 @@ exports.handler = async (event, context) => {
 
       if (supabaseUrl && supabaseAnonKey) {
         try {
-          const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+          supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
             auth: { persistSession: false },
             global: {
               headers: {
@@ -64,10 +66,11 @@ exports.handler = async (event, context) => {
           });
 
           // Obtener usuario autenticado
-          const { data: { user }, error: userErr } = await supabase.auth.getUser(token);
+          const { data: { user }, error: userErr } = await supabaseClient.auth.getUser(token);
           if (!userErr && user) {
+            authenticatedUser = user;
             // Consultar base de datos
-            const { data: profile, error: profileErr } = await supabase
+            const { data: profile, error: profileErr } = await supabaseClient
               .from("profiles")
               .select("paid, suspended")
               .eq("id", user.id)
@@ -135,6 +138,24 @@ exports.handler = async (event, context) => {
 
           console.log(`[PAGO CONFIRMADO] Transacción Mercado Pago aprobada para ID: ${paymentId}`);
 
+          // Guardar permanentemente en Supabase para no tener que consultar a Mercado Pago en envíos posteriores
+          if (authenticatedUser && supabaseClient) {
+            const { error: updateErr } = await supabaseClient
+              .from("profiles")
+              .update({
+                paid: true,
+                payment_id: paymentId,
+                updated_at: new Date().toISOString()
+              })
+              .eq("id", authenticatedUser.id);
+
+            if (updateErr) {
+              console.error("Error al registrar estado de pago manual en Supabase:", updateErr);
+            } else {
+              console.log(`[BD NUBE OK] Usuario ${authenticatedUser.email} actualizado permanentemente a PAGADO.`);
+            }
+          }
+
         } catch (mpErr) {
           console.error("Error al conectar con la API de Mercado Pago:", mpErr);
           return {
@@ -145,7 +166,9 @@ exports.handler = async (event, context) => {
         }
       }
     } else {
-      console.warn(`[PAGO ADVERTENCIA] MP_ACCESS_TOKEN no configurado en Netlify. Omitiendo verificación del ID: ${paymentId}`);
+      if (!userIsPaid) {
+        console.warn(`[PAGO ADVERTENCIA] MP_ACCESS_TOKEN no configurado en Netlify. Omitiendo verificación del ID: ${paymentId}`);
+      }
     }
 
     // Configurar el transportador SMTP para Gmail
