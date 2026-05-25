@@ -82,16 +82,17 @@ exports.handler = async (event, context) => {
         const rawPlaces = placesData.results.slice(0, 8); // Limitar a los primeros 8 para no exceder cuotas ni timeouts
         logs.push(`[MAPS] Se encontraron ${placesData.results.length} locales en Google Maps. Analizando los primeros ${rawPlaces.length}...`);
 
-        // 2. Obtener detalles de cada local para conseguir el Website
+        // 2. Obtener detalles de cada local para conseguir el Website y Teléfono
         for (const place of rawPlaces) {
           logs.push(`[MAPS] Obteniendo detalles de: ${place.name}...`);
           try {
-            const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${place.place_id}&fields=name,website,formatted_address&key=${apiKey}`;
+            const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${place.place_id}&fields=name,website,formatted_address,formatted_phone_number&key=${apiKey}`;
             const detailsRes = await fetch(detailsUrl);
             const detailsData = await detailsRes.json();
             
             const website = detailsData.result ? detailsData.result.website : null;
             const address = detailsData.result ? detailsData.result.formatted_address : place.formatted_address;
+            const phone = detailsData.result ? detailsData.result.formatted_phone_number : null;
 
             if (!website) {
               logs.push(`[AVISO] ${place.name} no tiene sitio web registrado en Google Maps. Saltando scraping...`);
@@ -99,6 +100,9 @@ exports.handler = async (event, context) => {
             }
 
             logs.push(`[WEB] Sitio web de ${place.name} encontrado: ${website}`);
+            if (phone) {
+              logs.push(`[MAPS] Teléfono de ${place.name} encontrado: ${phone}`);
+            }
             logs.push(`[SCRAPER] Visitando y analizando HTML de: ${website}...`);
 
             // 3. Hacer Scraping del sitio web del negocio
@@ -138,6 +142,7 @@ exports.handler = async (event, context) => {
                   name: place.name,
                   email: email || `contacto@${place.name.toLowerCase().replace(/[^a-z0-9]/g, "")}.com.ar`, // Fallback de email si tiene IG pero no correo directo
                   instagram: instagram || null,
+                  phone: phone || null,
                   website: website,
                   rubro: rubro
                 });
@@ -216,6 +221,8 @@ function runSimulation(city, rubro, prospectsList, logsList) {
   simulatedNames.forEach((name, index) => {
     const domain = `${name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "")}.com.ar`;
     const website = `http://www.${domain}`;
+    // Generar teléfono celular de Pergamino simulado
+    const phone = `5492477${400000 + index * 12345}`;
 
     logsList.push(`[MAPS] Negocio encontrado: ${name} (Web: ${website})`);
     logsList.push(`[SCRAPER] Analizando código HTML de ${website}...`);
@@ -230,6 +237,7 @@ function runSimulation(city, rubro, prospectsList, logsList) {
         name: name,
         email: `contacto@${domain}`,
         instagram: igHandle,
+        phone: phone,
         website: website,
         rubro: cleanRubro
       });
@@ -242,6 +250,7 @@ function runSimulation(city, rubro, prospectsList, logsList) {
         name: name,
         email: email,
         instagram: igHandle,
+        phone: phone,
         website: website,
         rubro: cleanRubro
       });
