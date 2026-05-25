@@ -990,7 +990,7 @@ let isScraping = false;
 // --- CONFIGURACIÓN DE SUPABASE (FASE 2) ---
 const SUPABASE_URL = "https://cssxmqtejlbrsaetybut.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_OKXZ3_RZCPJKfDsaVqEBRw_z0w0N3gs";
-const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+var supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 if (!supabase) {
   console.error("No se pudo cargar la librería de Supabase desde el CDN.");
 }
