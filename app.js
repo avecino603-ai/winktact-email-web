@@ -1729,8 +1729,11 @@ if (authForm) {
 
 // Inicio de sesión con Google (Supabase OAuth)
 const btnGoogleAuth = document.getElementById("btnGoogleAuth");
+console.log("[DEBUG] Botón Google Auth encontrado en DOM:", btnGoogleAuth);
 if (btnGoogleAuth) {
-  btnGoogleAuth.addEventListener("click", async () => {
+  btnGoogleAuth.addEventListener("click", async (e) => {
+    e.preventDefault();
+    console.log("[DEBUG] Click capturado en botón de Google");
     if (!supabase) {
       alert("Error: Supabase no está inicializado.");
       return;
@@ -1738,15 +1741,22 @@ if (btnGoogleAuth) {
     
     showAuthMessage("Redirigiendo a Google...", "success");
     
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: window.location.origin
-      }
-    });
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: window.location.origin
+        }
+      });
 
-    if (error) {
-      showAuthMessage(error.message, "danger");
+      if (error) {
+        console.error("[DEBUG] Error de OAuth:", error);
+        showAuthMessage(error.message, "danger");
+        alert("Error de inicio de sesión con Google: " + error.message);
+      }
+    } catch (err) {
+      console.error("[DEBUG] Excepción capturada en OAuth:", err);
+      alert("Excepción al conectar con Google: " + err.message);
     }
   });
 }
