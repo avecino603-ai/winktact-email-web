@@ -1230,19 +1230,19 @@ let updatePreviews = function() {};
 window.addEventListener("DOMContentLoaded", () => {
   // --- CARGAR SESIÓN DE SUPABASE ACTIVA ---
   if (supabase) {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
         currentUser = session.user;
         localStorage.setItem("winktact_supabase_token", session.access_token);
         loadUserProfileAndData();
       } else {
+        currentUser = null;
+        currentProfile = null;
         localStorage.removeItem("winktact_supabase_token");
         // Mostrar pantalla de login si no hay sesión
         appContainer.style.display = "none";
         loginContainer.style.display = "block";
       }
-    }).catch(err => {
-      console.error("Error al obtener la sesión de Supabase:", err);
     });
   } else {
     // Si no hay Supabase, usar fallback anterior
@@ -1727,6 +1727,30 @@ if (authForm) {
   });
 }
 
+// Inicio de sesión con Google (Supabase OAuth)
+const btnGoogleAuth = document.getElementById("btnGoogleAuth");
+if (btnGoogleAuth) {
+  btnGoogleAuth.addEventListener("click", async () => {
+    if (!supabase) {
+      alert("Error: Supabase no está inicializado.");
+      return;
+    }
+    
+    showAuthMessage("Redirigiendo a Google...", "success");
+    
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.origin
+      }
+    });
+
+    if (error) {
+      showAuthMessage(error.message, "danger");
+    }
+  });
+}
+
 function showAuthMessage(text, type) {
   if (!authMessage) return;
   authMessage.style.display = "block";
@@ -1757,14 +1781,19 @@ async function loadUserProfileAndData() {
 
   if (profileErr) {
     console.error("Error al cargar perfil de Supabase:", profileErr);
+    // Fallback si no existe el perfil aún en la base de datos (por ejemplo, demora en el trigger de creación)
+    userNameInput.value = currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || "Usuario Google";
+    userEmailInput.value = currentUser.email;
+    sessionStorage.setItem("winktact_username", userNameInput.value);
+    sessionStorage.setItem("winktact_useremail", userEmailInput.value);
   } else if (profile) {
     currentProfile = profile;
-    userNameInput.value = profile.name;
-    userEmailInput.value = profile.email;
+    userNameInput.value = profile.name || currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || "";
+    userEmailInput.value = profile.email || currentUser.email;
     
     // Guardar sesión en sessionStorage
-    sessionStorage.setItem("winktact_username", profile.name);
-    sessionStorage.setItem("winktact_useremail", profile.email);
+    sessionStorage.setItem("winktact_username", userNameInput.value);
+    sessionStorage.setItem("winktact_useremail", userEmailInput.value);
     
     // Sincronizar estado de pago en el navegador
     if (profile.paid) {
